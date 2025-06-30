@@ -92,8 +92,7 @@ public class ChessPiece {
 
                 ChessPiece target3 = null;
                 ChessPosition newPos3 = new ChessPosition(row - 2, col);
-
-
+                
                 if (row > 2) {
                     target3 = board.getPiece(newPos3);
                 }
