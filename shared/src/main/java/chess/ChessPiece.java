@@ -13,16 +13,15 @@ import java.util.Objects;
 public class ChessPiece {
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         ChessPiece that = (ChessPiece) o;
-        return color == that.color && type == that.type;
+        return type == that.type && color == that.color;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(color, type);
+        return Objects.hash(type, color);
     }
 
     private final ChessGame.TeamColor color;
@@ -92,7 +91,7 @@ public class ChessPiece {
 
                 ChessPiece target3 = null;
                 ChessPosition newPos3 = new ChessPosition(row - 2, col);
-                
+
                 if (row > 2) {
                     target3 = board.getPiece(newPos3);
                 }
