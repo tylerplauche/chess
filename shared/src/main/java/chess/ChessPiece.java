@@ -306,7 +306,6 @@ public class ChessPiece {
                 while (row >= 1 && row <= 8 && col >= 1 && col <= 8) {
                     ChessPosition newPos = new ChessPosition(row, col);
                     ChessPiece target = board.getPiece(newPos);
-                    
 
                     if (target == null) {
                         moves.add(new ChessMove(myPosition, newPos, null));
@@ -319,7 +318,6 @@ public class ChessPiece {
                             break;
                         }
                     }
-
                     row += dir[0];
                     col += dir[1];
                 }
