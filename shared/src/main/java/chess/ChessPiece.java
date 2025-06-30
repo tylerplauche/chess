@@ -76,10 +76,8 @@ public class ChessPiece {
                 ChessPosition newPos = new ChessPosition(row -1, col);
                 ChessPiece target = board.getPiece(newPos);
 
-
                 ChessPiece target1 = null;
                 ChessPosition newPos1 = new ChessPosition(row - 1, col+1);
-
 
                 if (col < 8) {
                     target1 = board.getPiece(newPos1);
@@ -87,7 +85,7 @@ public class ChessPiece {
 
                 ChessPiece target2 = null;
                 ChessPosition newPos2 = new ChessPosition(row - 1, col-1);
-                
+
                 if (col > 1) {
                     target2 = board.getPiece(newPos2);
                 }
