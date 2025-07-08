@@ -67,7 +67,7 @@ public class ChessGame {
         ChessPiece piece = board.getPiece(startPosition);
 
         if (piece == null) {
-            return null;
+            return null; // obvious
         }
 
         Collection<ChessMove> legalMoves = piece.pieceMoves(board, startPosition);
@@ -81,11 +81,11 @@ public class ChessGame {
             board.addPiece(startPosition, null);
 
             if (!isInCheck(moved.getTeamColor())) {
-                moves.add(move);
+                moves.add(move); // adds move to list if move is valid, and not in check
             }
 
-            board.addPiece(startPosition, moved);
-            board.addPiece(move.getEndPosition(), captured);
+            board.addPiece(startPosition, moved); // resets board , piece moved
+            board.addPiece(move.getEndPosition(), captured); // resets board , piece captured, if any
         }
 
         return moves;
