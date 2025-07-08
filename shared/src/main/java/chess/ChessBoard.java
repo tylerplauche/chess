@@ -25,8 +25,10 @@ public class ChessBoard {
     }
 
     private ChessPiece[][] squares = new ChessPiece[8][8];
+    private ChessGame.TeamColor currentTurn;
+
     public ChessBoard() {
-        //squares = new ChessPiece[8][8];
+        squares = new ChessPiece[8][8];
         resetBoard();
     }
 
@@ -83,12 +85,6 @@ public class ChessBoard {
             squares[1][col] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
             squares[6][col] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
         }
-    }
-
-    @Override
-    public String toString() {
-        return "ChessBoard{" +
-                "squares=" + Arrays.toString(squares) +
-                '}';
+        currentTurn = ChessGame.TeamColor.WHITE;
     }
 }
