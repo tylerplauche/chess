@@ -24,12 +24,14 @@ public class ChessBoard {
         return Arrays.deepHashCode(squares);
     }
 
-    private ChessPiece[][] squares = new ChessPiece[8][8];
+    private ChessPiece[][] squares; // = new ChessPiece[8][8];
     private ChessGame.TeamColor currentTurn;
 
     public ChessBoard() {
-        squares = new ChessPiece[8][8];
-        resetBoard();
+        this.squares = new ChessPiece[8][8];
+        this.currentTurn = ChessGame.TeamColor.WHITE;
+        //squares = new ChessPiece[8][8];
+        //resetBoard();
     }
 
     /**

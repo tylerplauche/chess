@@ -226,8 +226,6 @@ public class ChessPiece {
 
                         }
                     }
-                    row += dir[0];
-                    col += dir[1];
                 }
 
             }
@@ -256,8 +254,6 @@ public class ChessPiece {
 
                         }
                     }
-                    row += dir[0];
-                    col += dir[1];
                 }
 
             }
