@@ -116,7 +116,7 @@ public class ChessPiece {
                     moves.add(new ChessMove(myPosition, newPos, PieceType.KNIGHT));
                     moves.add(new ChessMove(myPosition, newPos, PieceType.BISHOP));
                 }
-                if (row == 2 && target1 != null && target2.getTeamColor() != this.color) {
+                if (row == 2 && target1 != null && target1.getTeamColor() != this.color) {
                     moves.add(new ChessMove(myPosition, newPos1, PieceType.QUEEN));
                     moves.add(new ChessMove(myPosition, newPos1, PieceType.ROOK));
                     moves.add(new ChessMove(myPosition, newPos1, PieceType.KNIGHT));
@@ -183,7 +183,7 @@ public class ChessPiece {
                         moves.add(new ChessMove(myPosition, newPos, PieceType.KNIGHT));
                         moves.add(new ChessMove(myPosition, newPos, PieceType.BISHOP));
                     }
-                    if (row == 7 && target1 != null && target2.getTeamColor() != this.color) {
+                    if (row == 7 && target1 != null && target1.getTeamColor() != this.color) {
                         moves.add(new ChessMove(myPosition, newPos1, PieceType.QUEEN));
                         moves.add(new ChessMove(myPosition, newPos1, PieceType.ROOK));
                         moves.add(new ChessMove(myPosition, newPos1, PieceType.KNIGHT));

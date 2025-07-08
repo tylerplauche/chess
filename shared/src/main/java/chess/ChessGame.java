@@ -111,8 +111,15 @@ public class ChessGame {
             throw new InvalidMoveException("Invalid move for piece");
         }
 
-        board.addPiece(end, new ChessPiece(piece.getTeamColor(),
-                move.getPromotionPiece() != null ? move.getPromotionPiece() : piece.getPieceType()));
+        if (move.getPromotionPiece() != null && piece.getPieceType() == piece.getPieceType().PAWN) {
+            ChessPiece promoted = new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
+            board.addPiece(move.getEndPosition(), promoted);
+        } else {
+            board.addPiece(move.getEndPosition(), piece);
+        }
+
+
+        board.addPiece(end, new ChessPiece(piece.getTeamColor(), move.getPromotionPiece() != null ? move.getPromotionPiece() : piece.getPieceType()));
         board.addPiece(start, null);
 
         currentTurn = (currentTurn == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
