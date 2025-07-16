@@ -12,8 +12,7 @@ import server.RegisterHandler;
 
 public class Server {
     private  DataAccess db = new MemoryDataAccess();
-    private  RegisterService reg = new RegisterService(db);
-    private  LoginService log = new LoginService(db);
+
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
@@ -22,7 +21,7 @@ public class Server {
 
         // Register your endpoints and handle exceptions here.
         Spark.delete("/db", new ClearHandler(db));
-        Spark.post("/user", new RegisterHandler());
+        Spark.post("/user", new RegisterHandler(db));
         Spark.post("/session", new LoginHandler(db));
 
         //This line initializes the server and can be removed once you have a functioning endpoint 

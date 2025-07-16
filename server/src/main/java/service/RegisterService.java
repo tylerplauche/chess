@@ -27,6 +27,7 @@ public class RegisterService {
         UserData user = new UserData(request.username(), request.password(), request.email());
         data.insertUser(user);
 
+
         String authToken = UUID.randomUUID().toString();
         data.insertAuth(new AuthData(authToken, request.username()));
 

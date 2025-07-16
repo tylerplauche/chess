@@ -23,7 +23,11 @@ public class LoginService {
         }
 
         // Fetch user by username
+        //UserData user = data.getUser(request.username());
+
+
         UserData user = data.getUser(request.username());
+
 
         // Check user exists and password matches
         if (user == null || !user.password().equals(request.password())) {
