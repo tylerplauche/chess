@@ -1,12 +1,11 @@
 package server;
 
-import spark.*;
 import dataaccess.DataAccess;
-import dataaccess.DataMemory;
+import dataaccess.MemoryDataAccess;
 import spark.Spark;
 
 public class Server {
-    private final DataAccess db = new DataMemory();
+    private final DataAccess db = new MemoryDataAccess();
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
