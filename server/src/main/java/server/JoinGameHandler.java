@@ -29,9 +29,15 @@ public class JoinGameHandler implements Route {
             res.status(200);
             return gson.toJson(result);
         } catch (DataAccessException e) {
-            if (e.getMessage().equals("unauthorized")) res.status(401);
-            else if (e.getMessage().equals("already taken")) res.status(403);
-            else res.status(400);
+            if (e.getMessage().equals("unauthorized")) {
+                res.status(401);
+            }
+            else if (e.getMessage().equals("already taken")) {
+                res.status(403);
+            }
+            else {
+                res.status(400);
+            }
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         } catch (Exception e) {
             res.status(500);

@@ -36,8 +36,12 @@ public class LoginHandler implements Route {
 
     private int determineStatusCode(DataAccessException exception) {
         String message = exception.getMessage();
-        if ("bad request".equals(message)) return 400;
-        if ("unauthorized".equals(message)) return 401;
+        if ("bad request".equals(message)) {
+            return 400;
+        }
+        if ("unauthorized".equals(message)) {
+            return 401;
+        }
         return 500;
     }
 
