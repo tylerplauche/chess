@@ -30,7 +30,7 @@ public class RegisterServiceTest {
     }
 
     @Test
-    public void negativeRegisterTest_AlreadyTaken() throws DataAccessException {
+    public void negativeRegisterTestAlreadyTaken() throws DataAccessException {
         RegisterRequest request = new RegisterRequest("bob", "pass", "bob@mail.com");
         service.register(request);
         assertThrows(DataAccessException.class, () -> service.register(request));

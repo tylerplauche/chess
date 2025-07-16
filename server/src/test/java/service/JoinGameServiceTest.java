@@ -30,7 +30,7 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void joinGame_success_white() throws DataAccessException {
+    public void joinGameSuccessWhite() throws DataAccessException {
         JoinGameRequest request = new JoinGameRequest("white", 1);
         var result = service.joinGame("token123", request);
 
@@ -41,7 +41,7 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void joinGame_success_black() throws DataAccessException {
+    public void joinGameSuccessBlack() throws DataAccessException {
         // First join white
         service.joinGame("token123", new JoinGameRequest("white", 1));
 
@@ -59,7 +59,7 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void joinGame_alreadyTaken_throws() throws DataAccessException {
+    public void joinGameAlreadyTakenThrows() throws DataAccessException {
         service.joinGame("token123", new JoinGameRequest("white", 1));
 
         // Try joining white again with a different user
@@ -74,7 +74,7 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void joinGame_unauthorized_throws() {
+    public void joinGameUnauthorizedThrows() {
         JoinGameRequest request = new JoinGameRequest("white", 1);
 
         DataAccessException ex = assertThrows(DataAccessException.class, () ->
@@ -84,7 +84,7 @@ public class JoinGameServiceTest {
     }
 
     @Test
-    public void joinGame_badRequest_throws() {
+    public void joinGameBadRequestThrows() {
         // Null auth token
         assertThrows(DataAccessException.class, () -> service.joinGame(null, new JoinGameRequest("white", 1)));
 

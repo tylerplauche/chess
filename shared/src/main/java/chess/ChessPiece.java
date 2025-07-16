@@ -70,10 +70,23 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         Collection<ChessMove> moves = new ArrayList<>();
-        if (type == PieceType.PAWN) {
-            int row = myPosition.getRow();
-            int col = myPosition.getColumn();
-            if(color == ChessGame.TeamColor.BLACK ) {
+
+        if (type != PieceType.PAWN) {
+            return pieceMovesForNonPawn(board, myPosition, type);
+        }
+
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
+
+        if (color == ChessGame.TeamColor.BLACK) {
+            handleBlackPawnMoves(board, myPosition, row, col, moves);
+        } else {
+            handleWhitePawnMoves(board, myPosition, row, col, moves);
+        }
+        return moves;
+    }
+    private void handleBlackPawnMoves(ChessBoard board, ChessPosition myPosition, int row, int col, Collection<ChessMove> moves) {
+
                 ChessPosition newPos = new ChessPosition(row -1, col);
                 ChessPiece target = board.getPiece(newPos);
                 ChessPiece target1 = null;
@@ -114,52 +127,56 @@ public class ChessPiece {
                         addPromotionMoves(moves, myPosition, newPos2);
                     }
                 }
+    }
+
+    private void handleWhitePawnMoves(ChessBoard board, ChessPosition myPosition, int row, int col, Collection<ChessMove> moves) {
+
+            ChessPosition newPos = new ChessPosition(row +1, col);
+            ChessPiece target = board.getPiece(newPos);
+            ChessPiece target1 = null;
+            ChessPosition newPos1 = new ChessPosition(row + 1, col+1);
+            if (col < 8) {
+                target1 = board.getPiece(newPos1);
             }
-            if(color == ChessGame.TeamColor.WHITE ) {
-                ChessPosition newPos = new ChessPosition(row +1, col);
-                ChessPiece target = board.getPiece(newPos);
-                ChessPiece target1 = null;
-                ChessPosition newPos1 = new ChessPosition(row + 1, col+1);
-                if (col < 8) {
-                    target1 = board.getPiece(newPos1);
+            ChessPiece target2 = null;
+            ChessPosition newPos2 = new ChessPosition(row + 1, col-1);
+            if (col > 1) {
+                target2 = board.getPiece(newPos2);
+            }
+            ChessPiece target3 = null;
+            ChessPosition newPos3 = new ChessPosition(row + 2, col);
+            if (row < 7) {
+                target3 = board.getPiece(newPos3);
+            }
+            if (row <8) {
+                if (row != 7 && target == null) {
+                    moves.add(new ChessMove(myPosition, newPos, null));
                 }
-                ChessPiece target2 = null;
-                ChessPosition newPos2 = new ChessPosition(row + 1, col-1);
-                if (col > 1) {
-                    target2 = board.getPiece(newPos2);
+                if (row != 7 && target1 != null && target1.getTeamColor() != this.color) {
+                    moves.add(new ChessMove(myPosition, newPos1, null));
                 }
-                ChessPiece target3 = null;
-                ChessPosition newPos3 = new ChessPosition(row + 2, col);
-                if (row < 7) {
-                    target3 = board.getPiece(newPos3);
+                if (row != 7 && target2 != null && target2.getTeamColor() != this.color) {
+                    moves.add(new ChessMove(myPosition, newPos2, null));
                 }
-                if (row <8) {
-                    if (row != 7 && target == null) {
-                        moves.add(new ChessMove(myPosition, newPos, null));
+                if (row == 2 && target3 == null && target == null) {
+                    moves.add(new ChessMove(myPosition, newPos3, null));
+                }
+                if (row == 7) {
+                    if (target == null) {
+                        addPromotionMoves(moves, myPosition, newPos);
                     }
-                    if (row != 7 && target1 != null && target1.getTeamColor() != this.color) {
-                        moves.add(new ChessMove(myPosition, newPos1, null));
+                    if (target1 != null && target1.getTeamColor() != this.color) {
+                        addPromotionMoves(moves, myPosition, newPos1);
                     }
-                    if (row != 7 && target2 != null && target2.getTeamColor() != this.color) {
-                        moves.add(new ChessMove(myPosition, newPos2, null));
-                    }
-                    if (row == 2 && target3 == null && target == null) {
-                        moves.add(new ChessMove(myPosition, newPos3, null));
-                    }
-                    if (row == 7) {
-                        if (target == null) {
-                            addPromotionMoves(moves, myPosition, newPos);
-                        }
-                        if (target1 != null && target1.getTeamColor() != this.color) {
-                            addPromotionMoves(moves, myPosition, newPos1);
-                        }
-                        if (target2 != null && target2.getTeamColor() != this.color) {
-                            addPromotionMoves(moves, myPosition, newPos2);
-                        }
+                    if (target2 != null && target2.getTeamColor() != this.color) {
+                        addPromotionMoves(moves, myPosition, newPos2);
                     }
                 }
             }
-        }
+
+    }
+    private Collection<ChessMove> pieceMovesForNonPawn(ChessBoard board, ChessPosition myPosition, PieceType type) {
+        Collection<ChessMove> moves = new ArrayList<>();
         if (type == PieceType.KNIGHT) {
             int[][] directions = {{-1, 2}, {1, 2}, {1, -2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}};
             for (int[] dir : directions) {

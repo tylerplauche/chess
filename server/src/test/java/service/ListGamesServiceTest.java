@@ -34,7 +34,7 @@ public class ListGamesServiceTest {
     }
 
     @Test
-    public void listGames_validAuth_returnsGames() throws DataAccessException {
+    public void listGamesValidAuthReturnsGames() throws DataAccessException {
         ListGamesResult result = service.listGames(validAuthToken);
         Collection<GameData> games = result.games();
         assertNotNull(games);
@@ -42,13 +42,13 @@ public class ListGamesServiceTest {
     }
 
     @Test
-    public void listGames_invalidAuth_throwsException() {
+    public void listGamesInvalidAuthThrowsException() {
         var ex = assertThrows(DataAccessException.class, () -> service.listGames("bad-token"));
         assertEquals("unauthorized", ex.getMessage());
     }
 
     @Test
-    public void listGames_nullAuth_throwsException() {
+    public void listGamesNullAuthThrowsException() {
         var ex = assertThrows(DataAccessException.class, () -> service.listGames(null));
         assertEquals("unauthorized", ex.getMessage());
     }
