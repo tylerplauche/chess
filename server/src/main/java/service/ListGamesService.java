@@ -9,10 +9,10 @@ import model.ListGamesResult;
 
 import java.util.Collection;
 
-public class ListGameService {
+public class ListGamesService {
     private final DataAccess data;
 
-    public ListGameService(DataAccess data) {
+    public ListGamesService(DataAccess data) {
         this.data = data;
     }
 
