@@ -217,7 +217,6 @@ public class ChessPiece {
                 }
             }
         }
-
         if (type == PieceType.BISHOP) {
             int[][] directions = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
             for (int[] dir : directions) {
@@ -239,7 +238,6 @@ public class ChessPiece {
                 }
             }
         }
-
         if (type == PieceType.ROOK) {
             int[][] directions = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
             for (int[] dir : directions) {
@@ -262,7 +260,6 @@ public class ChessPiece {
                 }
             }
         }
-
         if (type == PieceType.QUEEN) {
             int[][] directions = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
             for (int[] dir : directions) {
