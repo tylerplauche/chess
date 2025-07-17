@@ -131,7 +131,7 @@ public class ChessPiece {
     }
 
     private void handleWhitePawnMoves(ChessBoard board,
-                                      ChessPosition myPosition, int row1, int col, Collection<ChessMove> moves) {
+                                      ChessPosition myPosition, int row1, int col, Collection<ChessMove> whiteMoves) {
 
             ChessPosition newPos = new ChessPosition(row1 +1, col);
             ChessPiece target = board.getPiece(newPos);
@@ -152,26 +152,26 @@ public class ChessPiece {
             }
             if (row1 <8) {
                 if (row1 != 7 && target == null) {
-                    moves.add(new ChessMove(myPosition, newPos, null));
+                    whiteMoves.add(new ChessMove(myPosition, newPos, null));
                 }
                 if (row1 != 7 && target1 != null && target1.getTeamColor() != this.color) {
-                    moves.add(new ChessMove(myPosition, newPos1, null));
+                    whiteMoves.add(new ChessMove(myPosition, newPos1, null));
                 }
                 if (row1 != 7 && target2 != null && target2.getTeamColor() != this.color) {
-                    moves.add(new ChessMove(myPosition, newPos2, null));
+                    whiteMoves.add(new ChessMove(myPosition, newPos2, null));
                 }
                 if (row1 == 2 && target3 == null && target == null) {
-                    moves.add(new ChessMove(myPosition, newPos3, null));
+                    whiteMoves.add(new ChessMove(myPosition, newPos3, null));
                 }
                 if (row1 == 7) {
                     if (target == null) {
-                        addPromotionMoves(moves, myPosition, newPos);
+                        addPromotionMoves(whiteMoves, myPosition, newPos);
                     }
                     if (target1 != null && target1.getTeamColor() != this.color) {
-                        addPromotionMoves(moves, myPosition, newPos1);
+                        addPromotionMoves(whiteMoves, myPosition, newPos1);
                     }
                     if (target2 != null && target2.getTeamColor() != this.color) {
-                        addPromotionMoves(moves, myPosition, newPos2);
+                        addPromotionMoves(whiteMoves, myPosition, newPos2);
                     }
                 }
             }

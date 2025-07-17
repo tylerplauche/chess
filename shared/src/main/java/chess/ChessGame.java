@@ -142,7 +142,9 @@ public class ChessGame {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
-                if (piece == null) continue;
+                if (piece == null) {
+                    continue;
+                }
                 if (piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == teamColor) {
                     kingPosition = position;
                     break outer;
@@ -159,7 +161,9 @@ public class ChessGame {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
-                if (piece == null || piece.getTeamColor() == teamColor) continue;
+                if (piece == null || piece.getTeamColor() == teamColor) {
+                    continue;
+                }
 
                 Collection<ChessMove> theirMoves = piece.pieceMoves(board, position);
                 for (ChessMove move : theirMoves) {
