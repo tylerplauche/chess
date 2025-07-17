@@ -159,7 +159,7 @@ public class ChessGame {
                     Collection<ChessMove> theirMoves = piece.pieceMoves(board, position);
                     for (ChessMove move : theirMoves) {
                         if (move.getEndPosition().equals(kingPosition)) {
-                            return true; // King can be captured
+                            return true;
                         }
                     }
                 }
@@ -199,13 +199,13 @@ public class ChessGame {
             return false;
         }
 
-        for (int row = 1; row <= 8; row++) {
+        for (int row1 = 1; row1 <= 8; row1++) {
             for (int col = 1; col <= 8; col++) {
-                ChessPosition position = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(position);
+                ChessPosition position1 = new ChessPosition(row1, col);
+                ChessPiece piece1 = board.getPiece(position1);
 
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    Collection<ChessMove> moves = validMoves(position);
+                if (piece1 != null && piece1.getTeamColor() == teamColor) {
+                    Collection<ChessMove> moves = validMoves(position1);
                     if (moves != null && !moves.isEmpty()) {
                         return false;
                     }
