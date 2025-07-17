@@ -225,7 +225,7 @@ public class ChessPiece {
                         {-1, 0}, {0, -1}, {1, 0}, {0, 1},
                         {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
                 };
-                default -> new int[0][0];
+                default -> null;
             };
 
             for (int[] dir : directions) {
@@ -236,20 +236,21 @@ public class ChessPiece {
                     ChessPosition newPos = new ChessPosition(row, col);
                     ChessPiece target = board.getPiece(newPos);
 
-                    if (target == null) {
+                    boolean isEmpty = target == null;
+                    boolean isEnemy = !isEmpty && target.getTeamColor() != this.color;
+
+                    if (isEmpty || isEnemy) {
                         moves.add(new ChessMove(myPosition, newPos, null));
-                    } else {
-                        if (target.getTeamColor() != this.color) {
-                            moves.add(new ChessMove(myPosition, newPos, null));
-                        }
-                        break;
                     }
+
+                    if (!isEmpty) break;
 
                     row += dir[0];
                     col += dir[1];
                 }
             }
         }
+
 
         return moves;
     }
