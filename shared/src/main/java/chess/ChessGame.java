@@ -136,31 +136,35 @@ public class ChessGame {
     public boolean isInCheck(TeamColor teamColor) {
         ChessPosition kingPosition = null;
 
+        // Find king position
+        outer:
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
-
-                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == teamColor) {
+                if (piece == null) continue;
+                if (piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == teamColor) {
                     kingPosition = position;
-
+                    break outer;
                 }
             }
         }
+
         if (kingPosition == null) {
             return false;
         }
+
+        // Check threats to king
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
+                if (piece == null || piece.getTeamColor() == teamColor) continue;
 
-                if (piece != null && piece.getTeamColor() != teamColor) {
-                    Collection<ChessMove> theirMoves = piece.pieceMoves(board, position);
-                    for (ChessMove move : theirMoves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            return true;
-                        }
+                Collection<ChessMove> theirMoves = piece.pieceMoves(board, position);
+                for (ChessMove move : theirMoves) {
+                    if (move.getEndPosition().equals(kingPosition)) {
+                        return true;
                     }
                 }
             }
@@ -168,6 +172,7 @@ public class ChessGame {
 
         return false;
     }
+
 
 
     public boolean isInCheckmate(TeamColor teamColor) {

@@ -131,39 +131,39 @@ public class ChessPiece {
     }
 
     private void handleWhitePawnMoves(ChessBoard board,
-                                      ChessPosition myPosition, int row, int col, Collection<ChessMove> moves) {
+                                      ChessPosition myPosition, int row1, int col, Collection<ChessMove> moves) {
 
-            ChessPosition newPos = new ChessPosition(row +1, col);
+            ChessPosition newPos = new ChessPosition(row1 +1, col);
             ChessPiece target = board.getPiece(newPos);
             ChessPiece target1 = null;
-            ChessPosition newPos1 = new ChessPosition(row + 1, col+1);
+            ChessPosition newPos1 = new ChessPosition(row1 + 1, col+1);
             if (col < 8) {
                 target1 = board.getPiece(newPos1);
             }
             ChessPiece target2 = null;
-            ChessPosition newPos2 = new ChessPosition(row + 1, col-1);
+            ChessPosition newPos2 = new ChessPosition(row1 + 1, col-1);
             if (col > 1) {
                 target2 = board.getPiece(newPos2);
             }
             ChessPiece target3 = null;
-            ChessPosition newPos3 = new ChessPosition(row + 2, col);
-            if (row < 7) {
+            ChessPosition newPos3 = new ChessPosition(row1 + 2, col);
+            if (row1 < 7) {
                 target3 = board.getPiece(newPos3);
             }
-            if (row <8) {
-                if (row != 7 && target == null) {
+            if (row1 <8) {
+                if (row1 != 7 && target == null) {
                     moves.add(new ChessMove(myPosition, newPos, null));
                 }
-                if (row != 7 && target1 != null && target1.getTeamColor() != this.color) {
+                if (row1 != 7 && target1 != null && target1.getTeamColor() != this.color) {
                     moves.add(new ChessMove(myPosition, newPos1, null));
                 }
-                if (row != 7 && target2 != null && target2.getTeamColor() != this.color) {
+                if (row1 != 7 && target2 != null && target2.getTeamColor() != this.color) {
                     moves.add(new ChessMove(myPosition, newPos2, null));
                 }
-                if (row == 2 && target3 == null && target == null) {
+                if (row1 == 2 && target3 == null && target == null) {
                     moves.add(new ChessMove(myPosition, newPos3, null));
                 }
-                if (row == 7) {
+                if (row1 == 7) {
                     if (target == null) {
                         addPromotionMoves(moves, myPosition, newPos);
                     }
