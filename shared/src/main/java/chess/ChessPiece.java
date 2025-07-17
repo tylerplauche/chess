@@ -243,7 +243,9 @@ public class ChessPiece {
                         moves.add(new ChessMove(myPosition, newPos, null));
                     }
 
-                    if (!isEmpty) break;
+                    if (!isEmpty) {
+                        break;
+                    }
 
                     row += dir[0];
                     col += dir[1];
