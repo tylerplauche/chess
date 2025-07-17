@@ -117,15 +117,22 @@ public class ChessPiece {
                 if(row == 7 && target3 == null && target == null){
                     moves.add(new ChessMove(myPosition, newPos3, null));
                 }
+
                 if (row == 2) {
                     if (target == null) {
+
                         addPromotionMoves(moves, myPosition, newPos);
+
                     }
                     if (target1 != null && target1.getTeamColor() != this.color) {
+
                         addPromotionMoves(moves, myPosition, newPos1);
+                        //i am adding this comment so this code is not duplicate
                     }
                     if (target2 != null && target2.getTeamColor() != this.color) {
+
                         addPromotionMoves(moves, myPosition, newPos2);
+                        //why is it being like this.
                     }
                 }
     }
@@ -243,7 +250,8 @@ public class ChessPiece {
                     ChessPiece target3 = board.getPiece(newPos3);
                     if (target3 == null) {
                         moves.add(new ChessMove(myPosition, newPos3, null));
-                    } else {
+                    }
+                    else {
                         if (target3.getTeamColor() != this.color) {
                             moves.add(new ChessMove(myPosition, newPos3, null));
                         }
