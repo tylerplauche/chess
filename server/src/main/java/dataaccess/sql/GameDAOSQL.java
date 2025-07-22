@@ -73,23 +73,27 @@ public class GameDAOSQL implements GameDAO {
         }
     }
 
-    public void updateGame(GameData game) throws DataAccessException {
-        String sql = "UPDATE game SET white_username = ?, black_username = ?, game_name = ?, game_state = ? WHERE id = ?";
+    @Override
+    public void updateGame(int gameID, String playerColor, String username) throws DataAccessException {
+        String sql;
+        if (playerColor.equalsIgnoreCase("WHITE")) {
+            sql = "UPDATE game SET whiteUsername = ? WHERE id = ?";
+        } else if (playerColor.equalsIgnoreCase("BLACK")) {
+            sql = "UPDATE game SET blackUsername = ? WHERE id = ?";
+        } else {
+            throw new DataAccessException("Invalid player color: " + playerColor);
+        }
+
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, game.whiteUsername());
-            stmt.setString(2, game.blackUsername());
-            stmt.setString(3, game.gameName());
-            stmt.setString(4, SerializationUtils.serializeGame(game.game()));
-            stmt.setInt(5, game.gameID());
-            int affectedRows = stmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new DataAccessException("Update failed, no rows affected.");
-            }
-        } catch (SQLException ex) {
-            throw new DataAccessException("Update failed", ex);
+            stmt.setString(1, username);
+            stmt.setInt(2, gameID);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            throw new DataAccessException("Unable to update game", e);
         }
     }
+
 
     @Override
     public Collection<GameData> getAllGames() throws DataAccessException {
