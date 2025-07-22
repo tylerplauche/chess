@@ -20,8 +20,10 @@ public class GameDAOTest {
     }
 
     @Test
-    public void insertGame_success() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
+    public void insertGameSuccess() throws DataAccessException {
+        // gameID=1, no players yet, gameName="testGame"
+        GameData game = new GameData(1, null,
+                null, "testGame", new ChessGame());
         gameDAO.insertGame(game);
 
         GameData retrieved = gameDAO.getGame(1);
@@ -30,29 +32,34 @@ public class GameDAOTest {
     }
 
     @Test
-    public void insertGame_duplicateId_fails() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
+    public void insertGameDuplicateIdFails() throws DataAccessException {
+        GameData game = new GameData(1, null,
+                null, "testGame", new ChessGame());
         gameDAO.insertGame(game);
         assertThrows(DataAccessException.class, () -> gameDAO.insertGame(game));
     }
 
     @Test
-    public void getGame_notFound_returnsNull() throws DataAccessException {
+    public void getGameNotFoundReturnsNull() throws DataAccessException {
         assertNull(gameDAO.getGame(99));
     }
 
     @Test
-    public void getAllGames_returnsGames() throws DataAccessException {
-        gameDAO.insertGame(new GameData(1, "gameOne", null, null, new ChessGame()));
-        gameDAO.insertGame(new GameData(2, "gameTwo", null, null, new ChessGame()));
+    public void getAllGamesReturnsGames() throws DataAccessException {
+        // Insert games with proper arguments (gameName is 4th param)
+        gameDAO.insertGame(new GameData(1, null,
+                null, "gameOne", new ChessGame()));
+        gameDAO.insertGame(new GameData(2, null,
+                null, "gameTwo", new ChessGame()));
 
-        Collection<GameData> games = gameDAO.getAllGames();
+        Collection<GameData> games = gameDAO.listGames();
         assertEquals(2, games.size());
     }
 
     @Test
-    public void updateGame_updatesPlayer() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
+    public void updateGameUpdatesPlayer() throws DataAccessException {
+        GameData game = new GameData(1, null,
+                null, "testGame", new ChessGame());
         gameDAO.insertGame(game);
 
         gameDAO.updateGame(1, "WHITE", "alice");

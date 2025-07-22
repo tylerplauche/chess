@@ -3,6 +3,7 @@ package dataaccess;
 import dataaccess.sql.UserDAOSQL;
 import model.UserData;
 import org.junit.jupiter.api.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,26 +13,26 @@ public class UserDAOSQLTest {
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        // Initialize DAO
         userDAO = new UserDAOSQL();
-        // Clear users table before each test
         userDAO.clear();
     }
 
     @Test
-    public void insertUser_Success() throws DataAccessException {
-        UserData user = new UserData("testuser", "hashedpassword", "test@example.com");
+    public void insertUserSuccess() throws DataAccessException {
+        String rawPassword = "plaintextpassword";
+        UserData user = new UserData("testuser", rawPassword, "test@example.com");
         userDAO.insertUser(user);
 
         UserData fetched = userDAO.getUser("testuser");
         assertNotNull(fetched);
         assertEquals("testuser", fetched.username());
-        assertEquals("hashedpassword", fetched.password());
+        // Verify the hashed password matches the original password using BCrypt
+        assertTrue(BCrypt.checkpw(rawPassword, fetched.password()));
         assertEquals("test@example.com", fetched.email());
     }
 
     @Test
-    public void insertUser_Duplicate_ThrowsException() throws DataAccessException {
+    public void insertUserDuplicateThrowsException() throws DataAccessException {
         UserData user = new UserData("duplicateuser", "pass", "email@example.com");
         userDAO.insertUser(user);
 
@@ -42,13 +43,13 @@ public class UserDAOSQLTest {
     }
 
     @Test
-    public void getUser_NotFound_ReturnsNull() throws DataAccessException {
+    public void getUserNotFoundReturnsNull() throws DataAccessException {
         UserData user = userDAO.getUser("nonexistent");
         assertNull(user);
     }
 
     @Test
-    public void clear_RemovesAllUsers() throws DataAccessException {
+    public void clearRemovesAllUsers() throws DataAccessException {
         userDAO.insertUser(new UserData("user1", "pass1", "email1@example.com"));
         userDAO.insertUser(new UserData("user2", "pass2", "email2@example.com"));
 

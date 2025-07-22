@@ -16,6 +16,6 @@ public interface GameDAO {
 
     void clear() throws DataAccessException;
 
-    Collection<GameData> getAllGames() throws DataAccessException;
+
 
 }
