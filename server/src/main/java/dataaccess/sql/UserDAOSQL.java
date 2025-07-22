@@ -36,7 +36,7 @@ public class UserDAOSQL implements UserDAO {
                 return false;
             }
 
-            String storedHash = rs.getString("password hash");
+            String storedHash = rs.getString("password_hash");
             if (storedHash == null) {
 
                 return false;

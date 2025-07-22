@@ -26,9 +26,10 @@ public class UserDAOSQLTest {
         UserData fetched = userDAO.getUser("testuser");
         assertNotNull(fetched);
         assertEquals("testuser", fetched.username());
-        // Verify the hashed password matches the original password using BCrypt
-        assertTrue(BCrypt.checkpw(rawPassword, fetched.password()));
         assertEquals("test@example.com", fetched.email());
+
+        // Verify password with the method designed for that:
+        assertTrue(userDAO.verifyPassword("testuser", rawPassword));
     }
 
     @Test

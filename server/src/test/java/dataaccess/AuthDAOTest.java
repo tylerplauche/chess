@@ -17,7 +17,7 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void insertAuthToken_success() throws DataAccessException {
+    public void insertAuthTokensuccess() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
 
@@ -28,19 +28,19 @@ public class AuthDAOTest {
     }
 
     @Test
-    public void insertAuthToken_duplicate_fails() throws DataAccessException {
+    public void insertAuthTokenDuplicateFails() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
         assertThrows(DataAccessException.class, () -> authDAO.insertToken(token));
     }
 
     @Test
-    public void getAuthToken_notFound_returnsNull() throws DataAccessException {
+    public void getAuthTokenNotFoundReturnsNull() throws DataAccessException {
         assertNull(authDAO.getToken("nonexistent"));
     }
 
     @Test
-    public void deleteAuthToken_removesToken() throws DataAccessException {
+    public void deleteAuthTokenRemovesToken() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
         authDAO.deleteToken("abc123");

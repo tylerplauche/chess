@@ -12,13 +12,18 @@ public class AuthTokenDAOSQL implements AuthTokenDAO {
         String sql = "INSERT INTO auth_token (token, username) VALUES (?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            if (token.authToken() == null || token.username() == null) {
+                throw new DataAccessException("Token or username cannot be null");
+            }
             stmt.setString(1, token.authToken());
             stmt.setString(2, token.username());
             stmt.executeUpdate();
         } catch (SQLException ex) {
+            ex.printStackTrace(); // Add this
             throw new DataAccessException("Insert failed", ex);
         }
     }
+
 
     @Override
     public AuthData getToken(final String tokenValue) throws DataAccessException {
