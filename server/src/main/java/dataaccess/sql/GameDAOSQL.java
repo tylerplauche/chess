@@ -12,7 +12,8 @@ import java.util.Collection;
 public class GameDAOSQL implements GameDAO {
 
     public int insertGame(GameData game) throws DataAccessException {
-        String sql = "INSERT INTO game (white_username, black_username, game_name, game_state) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO game (white_username, black_username, " +
+                "game_name, game_state) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {

@@ -57,7 +57,8 @@ public class UserDAOSQL implements UserDAO {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new UserData(rs.getString("username"), null, rs.getString("email"));
+                return new UserData(rs.getString("username"), null,
+                        rs.getString("email"));
             }
             return null;
         } catch (SQLException ex) {
