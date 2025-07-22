@@ -6,8 +6,8 @@ import model.AuthData;
 import model.LoginRequest;
 import model.LoginResult;
 import model.UserData;
-import dataaccess.UserDAO;
-import dataaccess.DataAccessException;
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.util.UUID;
 
 public class LoginService {
@@ -18,29 +18,20 @@ public class LoginService {
     }
 
     public LoginResult login(LoginRequest request) throws DataAccessException {
-        // Validate input
         if (request.username() == null || request.password() == null) {
             throw new DataAccessException("bad request");
         }
 
-        // Fetch user by username
-        //UserData user = data.getUser(request.username());
-
-
         UserData user = data.getUser(request.username());
 
-
-        // Check user exists and password matches
-        if (user == null || !user.password().equals(request.password())) {
+        // Verify user exists and password hash matches
+        if (user == null || !BCrypt.checkpw(request.password(), user.password())) {
             throw new DataAccessException("unauthorized");
         }
 
-        // Generate new auth token and save it
         String authToken = UUID.randomUUID().toString();
         data.insertAuth(new AuthData(authToken, user.username()));
 
-        // Return successful login result
         return new LoginResult(user.username(), authToken);
     }
-
 }

@@ -6,6 +6,7 @@ import model.AuthData;
 import model.RegisterRequest;
 import model.RegisterResult;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
@@ -24,9 +25,10 @@ public class RegisterService {
             throw new DataAccessException("already taken");
         }
 
-        UserData user = new UserData(request.username(), request.password(), request.email());
+        // Hash the password before storing
+        String hashedPassword = BCrypt.hashpw(request.password(), BCrypt.gensalt());
+        UserData user = new UserData(request.username(), hashedPassword, request.email());
         data.insertUser(user);
-
 
         String authToken = UUID.randomUUID().toString();
         data.insertAuth(new AuthData(authToken, request.username()));
