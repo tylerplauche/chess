@@ -16,21 +16,27 @@ public class RegisterHandler implements Route {
     private final RegisterService registerService;
 
     public RegisterHandler(DataAccess db) {
-        this.registerService = new RegisterService(db); // Use shared db
+        this.registerService = new RegisterService(db);
     }
 
+    @Override
     public Object handle(Request req, Response res) {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
+            if (request.username() == null || request.password() == null || request.email() == null) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Missing required fields"));
+            }
+
             var result = registerService.register(request);
-            res.status(200);
+            res.status(201); // Created
             return gson.toJson(result);
         } catch (DataAccessException e) {
-            res.status(e.getMessage().contains("already taken") ? 403 : 400);
+            res.status(e.getMessage().contains("already taken") ? 409 : 400);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         } catch (Exception e) {
             res.status(500);
-            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
+            return gson.toJson(Map.of("message", "Internal server error"));
         }
     }
 }

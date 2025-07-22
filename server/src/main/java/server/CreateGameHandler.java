@@ -19,19 +19,30 @@ public class CreateGameHandler implements Route {
         this.gameService = new GameService(db);
     }
 
+    @Override
     public Object handle(Request req, Response res) {
         try {
             String authToken = req.headers("Authorization");
+            if (authToken == null || authToken.isBlank()) {
+                res.status(401);
+                return gson.toJson(Map.of("message", "Unauthorized: Missing auth token"));
+            }
+
             CreateGameRequest request = gson.fromJson(req.body(), CreateGameRequest.class);
+            if (request.gameName() == null || request.gameName().isBlank()) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Missing or blank game name"));
+            }
+
             var result = gameService.createGame(authToken, request);
-            res.status(200);
+            res.status(201); // Created
             return gson.toJson(result);
         } catch (DataAccessException e) {
             res.status(e.getMessage().equals("unauthorized") ? 401 : 400);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         } catch (Exception e) {
             res.status(500);
-            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
+            return gson.toJson(Map.of("message", "Internal server error"));
         }
     }
 }

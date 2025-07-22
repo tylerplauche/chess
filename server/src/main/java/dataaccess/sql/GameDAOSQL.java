@@ -1,5 +1,6 @@
 package dataaccess.sql;
 
+import com.google.gson.Gson;
 import dataaccess.*;
 import model.GameData;
 import chess.ChessGame;
@@ -89,6 +90,32 @@ public class GameDAOSQL implements GameDAO {
             throw new DataAccessException("Update failed", ex);
         }
     }
+
+    @Override
+    public Collection<GameData> getAllGames() throws DataAccessException {
+        ArrayList<GameData> games = new ArrayList<>();
+        String sql = "SELECT * FROM game";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                String white = rs.getString("whiteUsername");
+                String black = rs.getString("blackUsername");
+                String gameJson = rs.getString("game");
+
+                ChessGame game = new Gson().fromJson(gameJson, ChessGame.class);
+                games.add(new GameData(id, name, white, black, game));
+            }
+
+            return games;
+        } catch (Exception e) {
+            throw new DataAccessException("Unable to get games", e);
+        }
+    }
+
 
 
     public void clear() throws DataAccessException {

@@ -1,6 +1,8 @@
+
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
 import service.LogoutService;
 import spark.Request;
@@ -10,28 +12,31 @@ import spark.Route;
 import java.util.Map;
 
 public class LogoutHandler implements Route {
-    private final Gson gson = new Gson();
     private final LogoutService logoutService;
+    private final Gson gson = new Gson();
 
     public LogoutHandler(LogoutService logoutService) {
         this.logoutService = logoutService;
     }
 
-
+    @Override
     public Object handle(Request req, Response res) {
         try {
-            String authToken = req.headers("authorization");
+            String authToken = req.headers("Authorization");
+            if (authToken == null || authToken.isBlank()) {
+                res.status(401);
+                return gson.toJson(Map.of("message", "Unauthorized: Missing auth token"));
+            }
 
             logoutService.logout(authToken);
-            System.out.println("Auth header: " + authToken);
             res.status(200);
-            return "{}";
+            return gson.toJson(Map.of("message", "Logout successful"));
         } catch (DataAccessException e) {
-            res.status(401);
-            return gson.toJson(Map.of("message", "Error: unauthorized"));
+            res.status(e.getMessage().equals("unauthorized") ? 401 : 400);
+            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         } catch (Exception e) {
             res.status(500);
-            return gson.toJson(Map.of("message", "Error: internal server error"));
+            return gson.toJson(Map.of("message", "Internal server error"));
         }
     }
 }

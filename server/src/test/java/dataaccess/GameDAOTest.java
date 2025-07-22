@@ -1,5 +1,6 @@
 package dataaccess;
 
+import chess.ChessGame;
 import dataaccess.sql.GameDAOSQL;
 import model.GameData;
 import org.junit.jupiter.api.*;
@@ -20,7 +21,7 @@ public class GameDAOTest {
 
     @Test
     public void insertGame_success() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, "{}");
+        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
         gameDAO.insertGame(game);
 
         GameData retrieved = gameDAO.getGame(1);
@@ -30,7 +31,7 @@ public class GameDAOTest {
 
     @Test
     public void insertGame_duplicateId_fails() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, "{}");
+        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
         gameDAO.insertGame(game);
         assertThrows(DataAccessException.class, () -> gameDAO.insertGame(game));
     }
@@ -42,8 +43,8 @@ public class GameDAOTest {
 
     @Test
     public void getAllGames_returnsGames() throws DataAccessException {
-        gameDAO.insertGame(new GameData(1, "gameOne", null, null, "{}"));
-        gameDAO.insertGame(new GameData(2, "gameTwo", null, null, "{}"));
+        gameDAO.insertGame(new GameData(1, "gameOne", null, null, new ChessGame()));
+        gameDAO.insertGame(new GameData(2, "gameTwo", null, null, new ChessGame()));
 
         Collection<GameData> games = gameDAO.getAllGames();
         assertEquals(2, games.size());
@@ -51,8 +52,9 @@ public class GameDAOTest {
 
     @Test
     public void updateGame_updatesPlayer() throws DataAccessException {
-        GameData game = new GameData(1, "testGame", null, null, "{}");
+        GameData game = new GameData(1, "testGame", null, null, new ChessGame());
         gameDAO.insertGame(game);
+
         gameDAO.updateGame(1, "WHITE", "alice");
 
         GameData updated = gameDAO.getGame(1);
