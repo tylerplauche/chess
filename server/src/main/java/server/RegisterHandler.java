@@ -23,6 +23,7 @@ public class RegisterHandler implements Route {
     public Object handle(Request req, Response res) {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
+
             if (request.username() == null || request.password() == null || request.email() == null) {
                 res.status(400);
                 return gson.toJson(Map.of("message", "Missing required fields"));
@@ -31,9 +32,15 @@ public class RegisterHandler implements Route {
             var result = registerService.register(request);
             res.status(201); // Created
             return gson.toJson(result);
+
         } catch (DataAccessException e) {
-            res.status(e.getMessage().contains("already taken") ? 409 : 400);
+            if (e.getMessage() != null && e.getMessage().contains("already taken")) {
+                res.status(409); // Conflict for duplicate username
+            } else {
+                res.status(400);
+            }
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
+
         } catch (Exception e) {
             res.status(500);
             return gson.toJson(Map.of("message", "Internal server error"));

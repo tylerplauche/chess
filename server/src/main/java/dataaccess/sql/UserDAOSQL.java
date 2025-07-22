@@ -3,6 +3,7 @@ package dataaccess.sql;
 import dataaccess.*;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
+
 import java.sql.*;
 
 public class UserDAOSQL implements UserDAO {
@@ -21,30 +22,42 @@ public class UserDAOSQL implements UserDAO {
             throw new DataAccessException("Insert failed", ex);
         }
     }
-    public boolean verifyPassword(String username, String providedPassword) throws DataAccessException {
+
+    public boolean verifyPassword(String username, String clearTextPassword) throws DataAccessException {
         String sql = "SELECT password_hash FROM user WHERE username = ?";
+
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                String storedHash = rs.getString("password_hash");
-                return BCrypt.checkpw(providedPassword, storedHash);
+
+            if (!rs.next()) {
+                return false;
             }
-            return false;
-        } catch (SQLException ex) {
-            throw new DataAccessException("Verification failed", ex);
+
+            String storedHash = rs.getString("password hash");
+            if (storedHash == null) {
+
+                return false;
+            }
+
+            return BCrypt.checkpw(clearTextPassword, storedHash);
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Error verifying password", e);
         }
     }
 
+
     public UserData getUser(String username) throws DataAccessException {
-        String sql = "SELECT * FROM user WHERE username = ?";
+        String sql = "SELECT username, email FROM user WHERE username = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new UserData(rs.getString("username"), rs.getString("password_hash"), rs.getString("email"));
+                return new UserData(rs.getString("username"), null, rs.getString("email"));
             }
             return null;
         } catch (SQLException ex) {

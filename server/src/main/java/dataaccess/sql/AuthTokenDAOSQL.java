@@ -7,7 +7,8 @@ import java.sql.*;
 
 public class AuthTokenDAOSQL implements AuthTokenDAO {
 
-    public void insertToken(AuthData token) throws DataAccessException {
+    @Override
+    public void insertToken(final AuthData token) throws DataAccessException {
         String sql = "INSERT INTO auth_token (token, username) VALUES (?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -19,22 +20,25 @@ public class AuthTokenDAOSQL implements AuthTokenDAO {
         }
     }
 
-    public AuthData getToken(String tokenValue) throws DataAccessException {
+    @Override
+    public AuthData getToken(final String tokenValue) throws DataAccessException {
         String sql = "SELECT * FROM auth_token WHERE token = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tokenValue);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new AuthData(rs.getString("token"), rs.getString("username"));
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new AuthData(rs.getString("token"), rs.getString("username"));
+                }
+                return null;
             }
-            return null;
         } catch (SQLException ex) {
             throw new DataAccessException("Get failed", ex);
         }
     }
 
-    public void deleteToken(String token) throws DataAccessException {
+    @Override
+    public void deleteToken(final String token) throws DataAccessException {
         String sql = "DELETE FROM auth_token WHERE token = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -45,7 +49,7 @@ public class AuthTokenDAOSQL implements AuthTokenDAO {
         }
     }
 
-
+    @Override
     public void clear() throws DataAccessException {
         try (Connection conn = DatabaseManager.getConnection();
              Statement stmt = conn.createStatement()) {
