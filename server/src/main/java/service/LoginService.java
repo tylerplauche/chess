@@ -6,7 +6,8 @@ import model.AuthData;
 import model.LoginRequest;
 import model.LoginResult;
 import model.UserData;
-
+import dataaccess.UserDAO;
+import dataaccess.DataAccessException;
 import java.util.UUID;
 
 public class LoginService {
@@ -41,4 +42,5 @@ public class LoginService {
         // Return successful login result
         return new LoginResult(user.username(), authToken);
     }
+
 }

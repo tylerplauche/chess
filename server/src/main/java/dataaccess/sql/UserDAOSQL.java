@@ -8,7 +8,7 @@ import java.sql.*;
 public class UserDAOSQL implements UserDAO {
 
     public void insertUser(UserData user) throws DataAccessException {
-        String hashedPassword = BCrypt.hashpw(user.passwordHash(), BCrypt.gensalt());
+        String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
         String sql = "INSERT INTO user (username, password_hash, email) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();

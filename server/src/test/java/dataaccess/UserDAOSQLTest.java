@@ -26,7 +26,7 @@ public class UserDAOSQLTest {
         UserData fetched = userDAO.getUser("testuser");
         assertNotNull(fetched);
         assertEquals("testuser", fetched.username());
-        assertEquals("hashedpassword", fetched.passwordHash());
+        assertEquals("hashedpassword", fetched.password());
         assertEquals("test@example.com", fetched.email());
     }
 
