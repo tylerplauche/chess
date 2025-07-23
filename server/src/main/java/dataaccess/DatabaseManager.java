@@ -9,15 +9,15 @@ public class DatabaseManager {
     private static String dbPassword;
     private static String connectionUrl;
     private static String adminConnectionUrl;
+    private static String dbDriver;
+    private static String dbType;
 
     static {
         loadPropertiesFromResources();
     }
 
-    /**
-     * Creates the database if it does not already exist.
-     */
     public static void createDatabase() throws DataAccessException {
+        if (!dbType.equals("mysql")) return; // Only MySQL supports CREATE DATABASE this way
         String statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (Connection conn = DriverManager.getConnection(adminConnectionUrl, dbUsername, dbPassword);
              PreparedStatement stmt = conn.prepareStatement(statement)) {
@@ -27,9 +27,6 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Returns a connection to the specific database.
-     */
     public static Connection getConnection() throws DataAccessException {
         try {
             return DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
@@ -38,44 +35,102 @@ public class DatabaseManager {
         }
     }
 
-    /**
-     * Creates required tables if they do not already exist.
-     */
     public static void createTables() throws DataAccessException {
-        String sql = """
-        CREATE TABLE IF NOT EXISTS user (
-            username VARCHAR(100) PRIMARY KEY,
-            password_hash VARCHAR(255) NOT NULL,
-            email VARCHAR(255)
-        );
-        CREATE TABLE IF NOT EXISTS auth_token (
-            token VARCHAR(100) PRIMARY KEY,
-            username VARCHAR(100) NOT NULL,
-            FOREIGN KEY (username) REFERENCES user(username) ON DELETE CASCADE
-        );
-        CREATE TABLE IF NOT EXISTS game (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            white_username VARCHAR(100),
-            black_username VARCHAR(100),
-            game_name VARCHAR(255) NOT NULL UNIQUE,
-            game_state TEXT NOT NULL,
-            FOREIGN KEY (white_username) REFERENCES user(username) ON DELETE SET NULL,
-            FOREIGN KEY (black_username) REFERENCES user(username) ON DELETE SET NULL
-        );
-        """;
+        String[] sqlCommands;
 
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            for (String command : sql.split(";")) {
-                if (!command.isBlank()) {
-                    stmt.execute(command.trim());
-                }
+        switch (dbType) {
+            case "mysql" -> sqlCommands = new String[]{
+                    """
+                CREATE TABLE IF NOT EXISTS user (
+                    username VARCHAR(100) PRIMARY KEY,
+                    password_hash VARCHAR(255) NOT NULL,
+                    email VARCHAR(255)
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS auth_token (
+                    token VARCHAR(100) PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL,
+                    FOREIGN KEY (username) REFERENCES user(username) ON DELETE CASCADE
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS game (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    white_username VARCHAR(100),
+                    black_username VARCHAR(100),
+                    game_name VARCHAR(255) NOT NULL UNIQUE,
+                    game_state TEXT NOT NULL,
+                    FOREIGN KEY (white_username) REFERENCES user(username) ON DELETE SET NULL,
+                    FOREIGN KEY (black_username) REFERENCES user(username) ON DELETE SET NULL
+                )
+                """
+            };
+            case "sqlite" -> sqlCommands = new String[]{
+                    """
+                CREATE TABLE IF NOT EXISTS user (
+                    username TEXT PRIMARY KEY,
+                    password_hash TEXT NOT NULL,
+                    email TEXT
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS auth_token (
+                    token TEXT PRIMARY KEY,
+                    username TEXT NOT NULL,
+                    FOREIGN KEY (username) REFERENCES user(username) ON DELETE CASCADE
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS game (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    white_username TEXT,
+                    black_username TEXT,
+                    game_name TEXT NOT NULL UNIQUE,
+                    game_state TEXT NOT NULL,
+                    FOREIGN KEY (white_username) REFERENCES user(username) ON DELETE SET NULL,
+                    FOREIGN KEY (black_username) REFERENCES user(username) ON DELETE SET NULL
+                )
+                """
+            };
+            case "postgresql" -> sqlCommands = new String[]{
+                    """
+                CREATE TABLE IF NOT EXISTS "user" (
+                    username VARCHAR(100) PRIMARY KEY,
+                    password_hash VARCHAR(255) NOT NULL,
+                    email VARCHAR(255)
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS auth_token (
+                    token VARCHAR(100) PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL,
+                    FOREIGN KEY (username) REFERENCES "user"(username) ON DELETE CASCADE
+                )
+                """,
+                    """
+                CREATE TABLE IF NOT EXISTS game (
+                    id SERIAL PRIMARY KEY,
+                    white_username VARCHAR(100),
+                    black_username VARCHAR(100),
+                    game_name VARCHAR(255) NOT NULL UNIQUE,
+                    game_state TEXT NOT NULL,
+                    FOREIGN KEY (white_username) REFERENCES "user"(username) ON DELETE SET NULL,
+                    FOREIGN KEY (black_username) REFERENCES "user"(username) ON DELETE SET NULL
+                )
+                """
+            };
+            default -> throw new DataAccessException("Unsupported database type: " + dbType);
+        }
+
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            for (String command : sqlCommands) {
+                stmt.executeUpdate(command);
             }
         } catch (SQLException ex) {
             throw new DataAccessException("Failed to create tables", ex);
         }
     }
-
     /**
      * Loads properties from the db.properties file.
      */

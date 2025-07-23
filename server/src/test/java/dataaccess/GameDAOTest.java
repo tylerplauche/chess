@@ -15,11 +15,7 @@ public class GameDAOTest {
 
     private GameDAO gameDAO;
     private UserDAO userDAO;  // Add userDAO for managing users
-    @BeforeAll
-    public static void initDatabase() throws DataAccessException {
-        DatabaseManager.createDatabase();
-        DatabaseManager.createTables();
-    }
+
     @BeforeEach
     public void setUp() throws DataAccessException {
         gameDAO = new GameDAOSQL();
