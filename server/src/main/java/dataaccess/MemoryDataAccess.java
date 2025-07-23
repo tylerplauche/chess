@@ -12,12 +12,15 @@ public class MemoryDataAccess implements DataAccess {
     private final Map<Integer, GameData> games = new HashMap<>();
     private int nextGameID = 1;
 
+
+
     public void clear() {
         users.clear();
         auths.clear();
         games.clear();
         nextGameID = 1;
     }
+
 
     public void insertUser(UserData user) throws DataAccessException {
         if (users.containsKey(user.username())) {

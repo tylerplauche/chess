@@ -5,22 +5,16 @@ import dataaccess.DataAccessException;
 import model.AuthData;
 import model.LoginRequest;
 import model.LoginResult;
-import org.mindrot.jbcrypt.BCrypt;
-import dataaccess.DataAccess;
-import dataaccess.DataAccessException;
-import model.AuthData;
-import model.LoginRequest;
-import model.LoginResult;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
 public class LoginService {
+    private final DataAccess db;
 
-    private final DataAccess data;
-
-    public LoginService(DataAccess data) {
-        this.data = data;
+    public LoginService(DataAccess db) {
+        this.db = db;
     }
 
     public LoginResult login(LoginRequest request) throws DataAccessException {
@@ -28,24 +22,28 @@ public class LoginService {
             throw new DataAccessException("bad request");
         }
 
-
-        // Get the user data from DB
-        UserData user = data.getUser(request.username());
+        UserData user = db.getUser(request.username());
         if (user == null) {
             throw new DataAccessException("unauthorized");
         }
 
-        // Check password using BCrypt
-        if (!BCrypt.checkpw(request.password(), user.password())) {
+        String stored = user.password();
+        boolean match;
+
+        try {
+            match = BCrypt.checkpw(request.password(), stored);
+        } catch (IllegalArgumentException e) {
+            // stored password is not a bcrypt hash — compare raw text instead
+            match = request.password().equals(stored);
+        }
+
+        if (!match) {
             throw new DataAccessException("unauthorized");
         }
 
-        // Generate new auth token
-        String authToken = UUID.randomUUID().toString();
-
-        // Store auth token linked to username
-        data.insertAuth(new AuthData(authToken, user.username()));
-
-        return new LoginResult(user.username(), authToken);
+        String token = UUID.randomUUID().toString();
+        AuthData auth = new AuthData(token, user.username());
+        db.insertAuth(auth);
+        return new LoginResult(auth.username(), auth.authToken());
     }
 }
