@@ -13,50 +13,32 @@ import spark.Route;
 public class LoginHandler implements Route {
 
     private final LoginService loginService;
-    private final Gson gson;
+    private final Gson serializer;
 
     public LoginHandler(DataAccess dataAccess) {
         this.loginService = new LoginService(dataAccess);
-        this.gson = new Gson();
+        this.serializer = new Gson();
     }
 
-    @Override
-    public Object handle(Request req, Response res) {
+    public Object handle(Request request, Response response) {
+        LoginRequest loginRequest = serializer.fromJson(request.body(), LoginRequest.class);
+
         try {
-            LoginRequest loginRequest = gson.fromJson(req.body(), LoginRequest.class);
-
-            if (loginRequest == null
-                    || loginRequest.username() == null || loginRequest.username().isBlank()
-                    || loginRequest.password() == null || loginRequest.password().isBlank()) {
-
-                res.status(400);
-                return gson.toJson(new ErrorMessage("Missing username or password"));
-            }
-
             LoginResult result = loginService.login(loginRequest);
-            if (result == null) {
-                // Login failed (invalid credentials)
-                res.status(401);
-                return gson.toJson(new ErrorMessage("Invalid username or password"));
-            }
+            response.status(200);
+            return serializer.toJson(result);
 
-            res.status(200);
-            return gson.toJson(result);
-
-        } catch (DataAccessException e) {
-            // You can customize these messages/statuses based on your service's exceptions
-            int status = switch (e.getMessage()) {
-                case "bad request" -> 400;
-                case "unauthorized" -> 401;
-                default -> 500;
-            };
-            res.status(status);
-            return gson.toJson(new ErrorMessage("Error: " + e.getMessage()));
-
-        } catch (Exception e) {
-            res.status(500);
-            return gson.toJson(new ErrorMessage("Internal server error"));
+        } catch (DataAccessException exception) {
+            response.status(determineStatusCode(exception));
+            return serializer.toJson(new ErrorMessage("Error: " + exception.getMessage()));
         }
+    }
+
+    private int determineStatusCode(DataAccessException exception) {
+        String message = exception.getMessage();
+        if ("bad request".equals(message)) return 400;
+        if ("unauthorized".equals(message)) return 401;
+        return 500;
     }
 
     private record ErrorMessage(String message) {}

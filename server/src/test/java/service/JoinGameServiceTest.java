@@ -18,6 +18,7 @@ public class JoinGameServiceTest {
     @BeforeEach
     public void setup() throws DataAccessException {
         dataAccess = new MemoryDataAccess();
+
         service = new JoinGameService(dataAccess);
 
         // Add a user and auth token

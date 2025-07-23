@@ -26,24 +26,19 @@ public class RegisterHandler implements Route {
 
             if (request.username() == null || request.password() == null || request.email() == null) {
                 res.status(400);
-                return gson.toJson(Map.of("message", "Missing required fields"));
+
             }
 
             var result = registerService.register(request);
-            res.status(201); // Created
+            res.status(200); // Created
             return gson.toJson(result);
 
         } catch (DataAccessException e) {
-            if (e.getMessage() != null && e.getMessage().contains("already taken")) {
-                res.status(409); // Conflict for duplicate username
-            } else {
-                res.status(400);
-            }
+            res.status(e.getMessage().contains("already taken") ? 403 : 400);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
-
         } catch (Exception e) {
             res.status(500);
-            return gson.toJson(Map.of("message", "Internal server error"));
+            return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }
     }
 }

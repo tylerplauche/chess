@@ -57,7 +57,7 @@ public class DatabaseManager {
             id INT PRIMARY KEY AUTO_INCREMENT,
             white_username VARCHAR(100),
             black_username VARCHAR(100),
-            game_name VARCHAR(255) NOT NULL,
+            game_name VARCHAR(255) NOT NULL UNIQUE,
             game_state TEXT NOT NULL,
             FOREIGN KEY (white_username) REFERENCES user(username) ON DELETE SET NULL,
             FOREIGN KEY (black_username) REFERENCES user(username) ON DELETE SET NULL

@@ -26,7 +26,7 @@ public class GameService {
         }
 
         // Set white player to authenticated user, black player null for now
-        String whiteUsername = auth.username();
+        String whiteUsername = null;
 
         // Create new ChessGame instance or null if you want to defer creation
         ChessGame initialGameState = new ChessGame();

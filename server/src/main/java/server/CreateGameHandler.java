@@ -31,11 +31,11 @@ public class CreateGameHandler implements Route {
             CreateGameRequest request = gson.fromJson(req.body(), CreateGameRequest.class);
             if (request.gameName() == null || request.gameName().isBlank()) {
                 res.status(400);
-                return gson.toJson(Map.of("message", "Missing or blank game name"));
+                //return gson.toJson(Map.of("message", "Missing or blank game name"));
             }
 
             var result = gameService.createGame(authToken, request);
-            res.status(201); // Created
+            res.status(200); // Created
             return gson.toJson(result);
         } catch (DataAccessException e) {
             res.status(e.getMessage().equals("unauthorized") ? 401 : 400);

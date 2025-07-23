@@ -25,7 +25,7 @@ public class LogoutHandler implements Route {
             String authToken = req.headers("Authorization");
             if (authToken == null || authToken.isBlank()) {
                 res.status(401);
-                return gson.toJson(Map.of("message", "Unauthorized: Missing auth token"));
+                //return gson.toJson(Map.of("message", "Unauthorized: Missing auth token"));
             }
 
             logoutService.logout(authToken);

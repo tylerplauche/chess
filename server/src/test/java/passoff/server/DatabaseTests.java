@@ -30,6 +30,10 @@ public class DatabaseTests {
         System.out.println("Started test HTTP server on " + port);
 
         serverFacade = new TestServerFacade("localhost", Integer.toString(port));
+        System.out.println("Status code after createGame: " + serverFacade.getStatusCode());
+        System.out.println("Status code after joinPlayer: " + serverFacade.getStatusCode());
+
+
     }
 
     @BeforeEach
@@ -58,6 +62,8 @@ public class DatabaseTests {
 
         //join the game
         serverFacade.joinPlayer(new TestJoinRequest(ChessGame.TeamColor.WHITE, createResult.getGameID()), auth);
+        System.out.println("Status code after joincreateGame: " + serverFacade.getStatusCode());
+        System.out.println("Status code after joinjoinPlayer: " + serverFacade.getStatusCode());
 
         Assertions.assertTrue(initialRowCount < getDatabaseRows(), "No new data added to database");
 
@@ -67,8 +73,12 @@ public class DatabaseTests {
 
         //list games using the auth
         TestListResult listResult = serverFacade.listGames(auth);
+        System.out.println("Status code after listcreateGame: " + serverFacade.getStatusCode());
+        System.out.println("Status code after listjoinPlayer: " + serverFacade.getStatusCode());
+
         Assertions.assertEquals(200, serverFacade.getStatusCode(), "Server response code was not 200 OK");
         Assertions.assertEquals(1, listResult.getGames().length, "Missing game(s) in database after restart");
+
 
         TestListEntry game1 = listResult.getGames()[0];
         Assertions.assertEquals(game1.getGameID(), createResult.getGameID());
@@ -78,6 +88,9 @@ public class DatabaseTests {
 
         //test that we can still log in
         serverFacade.login(TEST_USER);
+        System.out.println("Status code after logincreateGame: " + serverFacade.getStatusCode());
+        System.out.println("Status code after loginjoinPlayer: " + serverFacade.getStatusCode());
+
         Assertions.assertEquals(200, serverFacade.getStatusCode(), "Unable to login");
     }
 

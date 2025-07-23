@@ -6,6 +6,12 @@ import model.AuthData;
 import model.LoginRequest;
 import model.LoginResult;
 import org.mindrot.jbcrypt.BCrypt;
+import dataaccess.DataAccess;
+import dataaccess.DataAccessException;
+import model.AuthData;
+import model.LoginRequest;
+import model.LoginResult;
+import model.UserData;
 
 import java.util.UUID;
 
@@ -18,14 +24,13 @@ public class LoginService {
     }
 
     public LoginResult login(LoginRequest request) throws DataAccessException {
-        if (request == null
-                || request.username() == null || request.username().isBlank()
-                || request.password() == null || request.password().isBlank()) {
+        if (request.username() == null || request.password() == null) {
             throw new DataAccessException("bad request");
         }
 
+
         // Get the user data from DB
-        var user = data.getUser(request.username());
+        UserData user = data.getUser(request.username());
         if (user == null) {
             throw new DataAccessException("unauthorized");
         }

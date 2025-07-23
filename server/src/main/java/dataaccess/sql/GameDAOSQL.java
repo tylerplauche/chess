@@ -11,6 +11,7 @@ import java.util.Collection;
 
 public class GameDAOSQL implements GameDAO {
 
+
     public int insertGame(GameData game) throws DataAccessException {
         String sql = "INSERT INTO game (white_username, black_username, " +
                 "game_name, game_state) VALUES (?, ?, ?, ?)";
@@ -34,6 +35,7 @@ public class GameDAOSQL implements GameDAO {
             throw new DataAccessException("Insert failed: " + ex.getMessage(), ex);
         }
     }
+
 
     public GameData getGame(int gameId) throws DataAccessException {
         String sql = "SELECT * FROM game WHERE id = ?";
@@ -86,9 +88,28 @@ public class GameDAOSQL implements GameDAO {
         }
     }
 
-    public void updateGame(int gameId, String playerColor, String username) throws DataAccessException {
-        String sql;
+    // New helper method to check if user exists in 'user' table
+    private boolean userExists(String username) throws DataAccessException {
+        String sql = "SELECT 1 FROM user WHERE username = ?";
 
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, username);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+
+        } catch (SQLException ex) {
+            throw new DataAccessException("User existence check failed: " + ex.getMessage(), ex);
+        }
+    }
+
+    public void updateGame(int gameId, String playerColor, String username) throws DataAccessException {
+        if (!userExists(username)) {
+            throw new DataAccessException("Username does not exist: " + username);
+        }
+
+        String sql;
         if (playerColor.equalsIgnoreCase("WHITE")) {
             sql = "UPDATE game SET white_username = ? WHERE id = ?";
         } else if (playerColor.equalsIgnoreCase("BLACK")) {

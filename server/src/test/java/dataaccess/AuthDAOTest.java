@@ -1,7 +1,9 @@
 package dataaccess;
 
 import dataaccess.sql.AuthTokenDAOSQL;
+import dataaccess.sql.UserDAOSQL;
 import model.AuthData;
+import model.UserData;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,15 +11,23 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AuthDAOTest {
 
     private AuthTokenDAO authDAO;
+    private UserDAO userDAO;
 
     @BeforeEach
     public void setUp() throws DataAccessException {
         authDAO = new AuthTokenDAOSQL();
+        userDAO = new UserDAOSQL();
+        // Clear auth tokens and users to start clean
         authDAO.clear();
+        userDAO.clear();
+
+        // Insert the referenced user before auth token tests
+        UserData user = new UserData("testUser", "password123", "test@example.com");
+        userDAO.insertUser(user);
     }
 
     @Test
-    public void insertAuthTokensuccess() throws DataAccessException {
+    public void insertAuthTokenSuccess() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
 
@@ -31,6 +41,7 @@ public class AuthDAOTest {
     public void insertAuthTokenDuplicateFails() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
+        // Expect exception on duplicate insert
         assertThrows(DataAccessException.class, () -> authDAO.insertToken(token));
     }
 
