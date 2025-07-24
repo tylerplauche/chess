@@ -35,7 +35,7 @@ public class DatabaseManager {
             return conn;
         } catch (SQLException ex) {
             System.err.println("DB connection failed: " + ex.getMessage());
-            ex.printStackTrace();
+            //ex.printStackTrace();
             throw new DataAccessException("Failed to get connection", ex);
         }
 

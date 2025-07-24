@@ -24,8 +24,6 @@ public class MemoryDataAccess implements DataAccess {
 
 
     public void insertUser(UserData user) throws DataAccessException {
-        String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
-        UserData hashedUser = new UserData(user.username(), hashedPassword, user.email());
 
     }
 

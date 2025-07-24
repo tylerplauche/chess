@@ -61,8 +61,6 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        // You might want to implement a proper updateGame(GameData) in GameDAO and call it here.
-        // For now, assuming updateGame in GameDAO accepts gameId, player color, and username, update both players if needed:
 
         if (game.whiteUsername() != null) {
             gameDao.updateGame(game.gameID(), "WHITE", game.whiteUsername());

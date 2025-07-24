@@ -9,13 +9,12 @@ import java.sql.*;
 public class UserDAOSQL implements UserDAO {
 
     public void insertUser(UserData user) throws DataAccessException {
-        String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
         String sql = "INSERT INTO user (username, password_hash, email) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.username());
-            stmt.setString(2, hashedPassword);
+            stmt.setString(2, user.password());  // Use already-hashed password
             stmt.setString(3, user.email());
             stmt.executeUpdate();
         } catch (SQLException ex) {

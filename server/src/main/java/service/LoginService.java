@@ -26,9 +26,16 @@ public class LoginService {
         if (user == null) {
             throw new DataAccessException("unauthorized");
         }
+        System.out.println("Login attempt:");
+        System.out.println("Provided: " + request.password());
+        System.out.println("Stored hash: " + user.password());
+
+        boolean validtest = BCrypt.checkpw(request.password(), user.password());
+        System.out.println("Password valid? " + validtest);
+
 
         boolean valid = BCrypt.checkpw(request.password(), user.password());
-        if (valid) {
+        if (!valid) {
             throw new DataAccessException("unauthorized");
         }
 

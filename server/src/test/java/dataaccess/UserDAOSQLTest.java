@@ -20,7 +20,9 @@ public class UserDAOSQLTest {
     @Test
     public void insertUserSuccess() throws DataAccessException {
         String rawPassword = "plaintextpassword";
-        UserData user = new UserData("testuser", rawPassword, "test@example.com");
+        String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt());
+
+        UserData user = new UserData("testuser", hashedPassword, "test@example.com");
         userDAO.insertUser(user);
 
         UserData fetched = userDAO.getUser("testuser");
@@ -28,7 +30,7 @@ public class UserDAOSQLTest {
         assertEquals("testuser", fetched.username());
         assertEquals("test@example.com", fetched.email());
 
-        // Verify password with the method designed for that:
+        // Verify password using the DAO method, passing the raw password
         assertTrue(userDAO.verifyPassword("testuser", rawPassword));
     }
 
