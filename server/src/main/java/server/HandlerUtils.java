@@ -7,7 +7,7 @@ import spark.Response;
 import java.util.Map;
 
 public class HandlerUtils {
-    private static final Gson gson = new Gson();
+    private static final Gson GSON = new Gson();
 
     public static String handleDataAccessException(Response res, DataAccessException e) {
         String message = e.getMessage().toLowerCase();
@@ -22,6 +22,6 @@ public class HandlerUtils {
             res.status(400); // Bad request
         }
 
-        return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
+        return GSON.toJson(Map.of("message", "Error: " + e.getMessage()));
     }
 }
