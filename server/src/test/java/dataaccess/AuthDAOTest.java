@@ -57,4 +57,19 @@ public class AuthDAOTest {
         authDAO.deleteToken("abc123");
         assertNull(authDAO.getToken("abc123"));
     }
+    @Test
+    public void deleteNonexistentTokenDoesNothing() throws DataAccessException {
+        // Should not throw
+        assertDoesNotThrow(() -> authDAO.deleteToken("ghostToken"));
+    }
+
+    @Test
+    public void clearAuthTokensWorksOnEmptyTable() throws DataAccessException {
+        // Clear again to ensure table is empty
+        authDAO.clear();
+
+        // Should not throw or fail
+        assertDoesNotThrow(() -> authDAO.clear());
+    }
+
 }

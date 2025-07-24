@@ -33,6 +33,20 @@ public class UserDAOSQLTest {
 
         assertTrue(userDAO.verifyPassword("testuser", rawPassword));
     }
+    @Test
+    public void verifyPasswordFailsWithWrongPassword() throws DataAccessException {
+        String rawPassword = "correctpassword";
+        String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt());
+
+        UserData user = new UserData("wrongpassuser", hashedPassword, "test@example.com");
+        userDAO.insertUser(user);
+
+        assertFalse(userDAO.verifyPassword("wrongpassuser", "incorrectpassword"));
+    }
+    @Test
+    public void verifyPasswordFailsWithNonexistentUser() throws DataAccessException {
+        assertFalse(userDAO.verifyPassword("ghostuser", "anyPassword"));
+    }
 
     @Test
     public void insertUserDuplicateThrowsException() throws DataAccessException {

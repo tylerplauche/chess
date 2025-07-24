@@ -57,6 +57,26 @@ public class GameDAOTest {
         Collection<GameData> games = gameDAO.listGames();
         assertEquals(2, games.size());
     }
+    @Test
+    public void listGamesEmptyReturnsEmptyList() throws DataAccessException {
+        Collection<GameData> games = gameDAO.listGames();
+        assertTrue(games.isEmpty());
+    }
+    @Test
+    public void updateGameInvalidColorThrows() throws DataAccessException {
+        userDAO.insertUser(new UserData("alice", "pass", "a@example.com"));
+        int gameId = gameDAO.insertGame(new GameData(0, null, null, "g", new ChessGame()));
+
+        assertThrows(DataAccessException.class, () -> gameDAO.updateGame(gameId, "BLUE", "alice"));
+    }
+    @Test
+    public void updateGameUserNotFoundThrows() throws DataAccessException {
+        int gameId = gameDAO.insertGame(new GameData(0, null, null, "g2", new ChessGame()));
+
+        assertThrows(DataAccessException.class, () -> gameDAO.updateGame(gameId, "WHITE", "ghostUser"));
+    }
+
+
 
     @Test
     public void updateGameUpdatesPlayer() throws DataAccessException {
