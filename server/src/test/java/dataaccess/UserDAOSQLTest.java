@@ -30,7 +30,7 @@ public class UserDAOSQLTest {
         assertEquals("testuser", fetched.username());
         assertEquals("test@example.com", fetched.email());
 
-        // Verify password using the DAO method, passing the raw password
+
         assertTrue(userDAO.verifyPassword("testuser", rawPassword));
     }
 

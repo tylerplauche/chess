@@ -14,7 +14,7 @@ public class UserDAOSQL implements UserDAO {
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.username());
-            stmt.setString(2, user.password());  // Use already-hashed password
+            stmt.setString(2, user.password());
             stmt.setString(3, user.email());
             stmt.executeUpdate();
         } catch (SQLException ex) {

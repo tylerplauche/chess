@@ -9,6 +9,7 @@ import model.LoginResult;
 import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,21 +25,31 @@ public class LoginServiceTest {
         db = new MemoryDataAccess();
         db.insertUser(new UserData(username, password, email));
         loginService = new LoginService(db);
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        UserData user = new UserData(username, hashedPassword, "test@example.com");
+        db.insertUser(user);
+
     }
 
     @Test
     public void loginSuccess() throws DataAccessException {
+        // Create login request with raw password
         LoginRequest request = new LoginRequest(username, password);
+
+        // Call login service
         LoginResult result = loginService.login(request);
 
+        // Verify login result
         assertNotNull(result);
         assertEquals(username, result.username());
         assertNotNull(result.authToken());
 
+        // Verify auth token stored in DB
         AuthData auth = db.getAuth(result.authToken());
         assertNotNull(auth);
         assertEquals(username, auth.username());
     }
+
 
     @Test
     public void loginWrongPassword() {

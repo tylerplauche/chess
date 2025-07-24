@@ -21,7 +21,7 @@ public class AuthDAOTest {
         authDAO.clear();
         userDAO.clear();
 
-        // Insert the referenced user before auth token tests
+
         UserData user = new UserData("testUser", "password123", "test@example.com");
         userDAO.insertUser(user);
     }
@@ -41,7 +41,7 @@ public class AuthDAOTest {
     public void insertAuthTokenDuplicateFails() throws DataAccessException {
         AuthData token = new AuthData("abc123", "testUser");
         authDAO.insertToken(token);
-        // Expect exception on duplicate insert
+
         assertThrows(DataAccessException.class, () -> authDAO.insertToken(token));
     }
 

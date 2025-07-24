@@ -25,6 +25,8 @@ public class MemoryDataAccess implements DataAccess {
 
     public void insertUser(UserData user) throws DataAccessException {
 
+        UserData hashedUser = new UserData(user.username(), user.password(), user.email());
+        users.put(user.username(), hashedUser);
     }
 
     public UserData getUser(String username) throws DataAccessException {

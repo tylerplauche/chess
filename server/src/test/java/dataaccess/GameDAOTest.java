@@ -60,9 +60,8 @@ public class GameDAOTest {
 
     @Test
     public void updateGameUpdatesPlayer() throws DataAccessException {
-        // Insert the user "alice" first so FK constraint will pass
+
         userDAO.insertUser(new UserData("alice", "passwordHash", "alice@example.com"));
-        // Make sure to replace "passwordHash" with the appropriate hashed password or dummy value if needed
 
         GameData game = new GameData(0, null, null, "testGame", new ChessGame());
         int gameId = gameDAO.insertGame(game);
