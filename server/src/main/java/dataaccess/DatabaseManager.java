@@ -12,11 +12,35 @@ public class DatabaseManager {
     private static String dbDriver;
     private static String dbType;
 
-    static {
-        loadPropertiesFromResources();
-    }
 
+
+
+
+
+
+    public static Connection getConnection() throws DataAccessException {
+        try {
+            return DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+        } catch (SQLException ex) {
+            if (ex.getMessage().contains("Unknown database") || ex.getMessage().contains("does not exist")) {
+                try {
+                    // Attempt to create the database, then retry connection
+                    createDatabase();
+                    createTables();
+                    return DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+                } catch (SQLException retryEx) {
+                    throw new DataAccessException("Failed to create and connect to database", retryEx);
+                }
+            } else {
+                throw new DataAccessException("Failed to get connection", ex);
+            }
+        }
+    }
     public static void createDatabase() throws DataAccessException {
+
+        System.out.println("Creating database: " + databaseName);
+        // ... existing code ...
+        System.out.println("Database created (or already exists).");
 
         String statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (Connection conn = DriverManager.getConnection(adminConnectionUrl, dbUsername, dbPassword);
@@ -26,23 +50,15 @@ public class DatabaseManager {
             throw new DataAccessException("Failed to create database", ex);
         }
     }
-
-    public static Connection getConnection() throws DataAccessException {
-        try {
-            System.out.println("Attempting MySQL connection...");
-            Connection conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
-            System.out.println("DB connection successful");
-            return conn;
-        } catch (SQLException ex) {
-            System.err.println("DB connection failed: " + ex.getMessage());
-            //ex.printStackTrace();
-            throw new DataAccessException("Failed to get connection", ex);
-        }
-
+    static {
+        loadPropertiesFromResources();
     }
 
     public static void createTables() throws DataAccessException {
         String[] sqlCommands;
+        System.out.println("Creating tables in database: " + databaseName);
+        // ... existing code ...
+        System.out.println("Tables created (or already exist).");
 
         switch (dbType) {
             case "mysql" -> sqlCommands = new String[]{
@@ -143,15 +159,20 @@ public class DatabaseManager {
     private static void loadPropertiesFromResources() {
         try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
             if (propStream == null) {
+                System.err.println("ERROR: db.properties file not found in resources!");
                 throw new RuntimeException("Unable to load db.properties");
             }
+            System.out.println("db.properties loaded successfully!");
             Properties props = new Properties();
             props.load(propStream);
             loadProperties(props);
+            System.out.println("Loaded properties: " + props);
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new RuntimeException("Unable to process db.properties", ex);
         }
     }
+
 
     private static void loadProperties(Properties props) {
         databaseName = props.getProperty("db.name");
@@ -161,9 +182,15 @@ public class DatabaseManager {
         String host = props.getProperty("db.host");
         int port = Integer.parseInt(props.getProperty("db.port"));
 
-        // Connection for database creation (no DB name)
-        adminConnectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
-        // Connection for actual queries (includes DB name and allows multi queries)
-        connectionUrl = String.format("jdbc:mysql://%s:%d/%s?allowMultiQueries=true", host, port, databaseName);
+        dbType = props.getProperty("db.type");
+        if (dbType == null) {
+            dbType = "mysql";  // default to mysql since your props imply mysql settings
+        }
+
+        if (dbType.equals("mysql")) {
+            adminConnectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+            connectionUrl = String.format("jdbc:mysql://%s:%d/%s?allowMultiQueries=true", host, port, databaseName);
+        }
+        // Add else if here for other db types if needed in future
     }
 }

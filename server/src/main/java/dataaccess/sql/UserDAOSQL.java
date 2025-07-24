@@ -8,6 +8,7 @@ import java.sql.*;
 
 public class UserDAOSQL implements UserDAO {
 
+
     public void insertUser(UserData user) throws DataAccessException {
         String sql = "INSERT INTO user (username, password_hash, email) VALUES (?, ?, ?)";
 
