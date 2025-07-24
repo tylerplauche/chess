@@ -51,20 +51,24 @@ public class UserDAOSQL implements UserDAO {
 
 
     public UserData getUser(String username) throws DataAccessException {
-        String sql = "SELECT username, email FROM user WHERE username = ?";
+        String sql = "SELECT username, password_hash, email FROM user WHERE username = ?";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new UserData(rs.getString("username"), null,
-                        rs.getString("email"));
+                return new UserData(
+                        rs.getString("username"),
+                        rs.getString("password_hash"),  // Return the hashed password here
+                        rs.getString("email")
+                );
             }
             return null;
         } catch (SQLException ex) {
             throw new DataAccessException("Get failed", ex);
         }
     }
+
 
     public void clear() throws DataAccessException {
         try (Connection conn = DatabaseManager.getConnection();

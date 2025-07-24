@@ -2,13 +2,14 @@ package server;
 
 import dataaccess.DataAccess;
 import dataaccess.MemoryDataAccess;
+import dataaccess.sql.MySqlDataAccess;
 import spark.Spark;
 import service.LogoutService;
 
 
 
 public class Server {
-    private  DataAccess db = new MemoryDataAccess();
+    private  DataAccess db = new MySqlDataAccess();
     LogoutService logoutService = new LogoutService(db);
 
 

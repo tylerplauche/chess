@@ -38,11 +38,19 @@ public class CreateGameHandler implements Route {
             res.status(200); // Created
             return gson.toJson(result);
         } catch (DataAccessException e) {
-            res.status(e.getMessage().equals("unauthorized") ? 401 : 400);
+            String message = e.getMessage().toLowerCase();
+
+            if (message.contains("already taken")) {
+                res.status(403); // Forbidden
+            } else if (message.contains("unauthorized") || message.contains("invalid credentials")) {
+                res.status(401); // Unauthorized
+            } else if (message.contains("connection")) {
+                res.status(500); // Server error
+            } else {
+                res.status(400); // Bad request
+            }
+
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
-        } catch (Exception e) {
-            res.status(500);
-            return gson.toJson(Map.of("message", "Internal server error"));
         }
     }
 }

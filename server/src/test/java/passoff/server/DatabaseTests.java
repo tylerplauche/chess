@@ -1,6 +1,9 @@
 package passoff.server;
 
 import chess.ChessGame;
+import dataaccess.DatabaseManager;
+import dataaccess.sql.AuthTokenDAOSQL;
+import model.AuthData;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
 import server.Server;
@@ -21,6 +24,7 @@ public class DatabaseTests {
     private static Server server;
 
     private static Class<?> databaseManagerClass;
+    private AuthTokenDAOSQL authTokenDAO;
 
 
     @BeforeAll
@@ -30,8 +34,7 @@ public class DatabaseTests {
         System.out.println("Started test HTTP server on " + port);
 
         serverFacade = new TestServerFacade("localhost", Integer.toString(port));
-        System.out.println("Status code after createGame: " + serverFacade.getStatusCode());
-        System.out.println("Status code after joinPlayer: " + serverFacade.getStatusCode());
+
 
 
     }
@@ -40,6 +43,7 @@ public class DatabaseTests {
     public void setUp() {
         serverFacade.clear();
     }
+
 
     @AfterAll
     static void stopServer() {
@@ -91,6 +95,7 @@ public class DatabaseTests {
         Assertions.assertEquals(200, serverFacade.getStatusCode(), "Unable to login");
     }
 
+
     @Test
     @DisplayName("Bcrypt")
     @Order(2)
@@ -99,6 +104,7 @@ public class DatabaseTests {
 
         executeForAllTables(this::checkTableForPassword);
     }
+
 
     @Test
     @DisplayName("Database Error Handling")
@@ -136,6 +142,9 @@ public class DatabaseTests {
         try {
             for (Supplier<TestResult> operation : operations) {
                 TestResult result = operation.get();
+                System.out.println("Status: " + serverFacade.getStatusCode() + ", Message: " + result.getMessage());
+                Assertions.assertEquals(500, serverFacade.getStatusCode(),
+                        "Server response code was not 500 Internal Error");
                 Assertions.assertEquals(500, serverFacade.getStatusCode(),
                         "Server response code was not 500 Internal Error");
                 Assertions.assertNotNull(result.getMessage(), "Invalid Request didn't return an error message");

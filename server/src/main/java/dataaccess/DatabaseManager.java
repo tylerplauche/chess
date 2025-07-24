@@ -17,7 +17,7 @@ public class DatabaseManager {
     }
 
     public static void createDatabase() throws DataAccessException {
-        if (!dbType.equals("mysql")) return; // Only MySQL supports CREATE DATABASE this way
+
         String statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (Connection conn = DriverManager.getConnection(adminConnectionUrl, dbUsername, dbPassword);
              PreparedStatement stmt = conn.prepareStatement(statement)) {
@@ -29,10 +29,16 @@ public class DatabaseManager {
 
     public static Connection getConnection() throws DataAccessException {
         try {
-            return DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+            System.out.println("Attempting MySQL connection...");
+            Connection conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
+            System.out.println("DB connection successful");
+            return conn;
         } catch (SQLException ex) {
+            System.err.println("DB connection failed: " + ex.getMessage());
+            ex.printStackTrace();
             throw new DataAccessException("Failed to get connection", ex);
         }
+
     }
 
     public static void createTables() throws DataAccessException {

@@ -24,6 +24,7 @@ public class GameDAOTest {
         userDAO.clear();                // Also clear user table to start fresh
     }
 
+
     @Test
     public void insertGameSuccess() throws DataAccessException {
         GameData game = new GameData(0, null, null, "testGame", new ChessGame());

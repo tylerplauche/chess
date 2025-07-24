@@ -11,10 +11,9 @@ import java.util.Collection;
 
 public class GameDAOSQL implements GameDAO {
 
-
+    // GameDAOSQL insertGame
     public int insertGame(GameData game) throws DataAccessException {
-        String sql = "INSERT INTO game (white_username, black_username, " +
-                "game_name, game_state) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO game (white_username, black_username, game_name, game_state) VALUES (?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -23,15 +22,19 @@ public class GameDAOSQL implements GameDAO {
             stmt.setString(2, game.blackUsername());
             stmt.setString(3, game.gameName());
             stmt.setString(4, SerializationUtils.serializeGame(game.game()));
-            stmt.executeUpdate();
+            int rowsInserted = stmt.executeUpdate();
+            System.out.println("insertGame: Rows inserted = " + rowsInserted + " for game " + game.gameName());
 
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
-                return rs.getInt(1);
+                int generatedId = rs.getInt(1);
+                System.out.println("insertGame: Generated ID = " + generatedId);
+                return generatedId;
             } else {
                 throw new DataAccessException("Game ID not returned after insert.");
             }
         } catch (SQLException ex) {
+            System.out.println("insertGame: SQLException " + ex.getMessage());
             throw new DataAccessException("Insert failed: " + ex.getMessage(), ex);
         }
     }

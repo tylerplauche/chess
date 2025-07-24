@@ -16,10 +16,16 @@ public class ClearHandler implements Route {
     }
 
     public Object handle(Request req, Response res) {
-        service.clear();
-        res.status(200);
-        return new Gson().toJson(new Object()); // returns {}
+        try {
+            service.clear();
+            res.status(200);
+            return new Gson().toJson(new Object());
+        } catch (Exception e) {
+            res.status(500);
+            return new Gson().toJson(new ErrorResponse("Error: " + e.getMessage()));
+        }
     }
+    private record ErrorResponse(String message) {}
 }
 
 

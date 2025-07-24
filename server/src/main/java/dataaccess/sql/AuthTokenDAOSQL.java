@@ -19,7 +19,7 @@ public class AuthTokenDAOSQL implements AuthTokenDAO {
             stmt.setString(2, token.username());
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            ex.printStackTrace(); // Add this
+            //ex.printStackTrace();
             throw new DataAccessException("Insert failed", ex);
         }
     }

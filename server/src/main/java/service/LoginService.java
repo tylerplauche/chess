@@ -27,17 +27,8 @@ public class LoginService {
             throw new DataAccessException("unauthorized");
         }
 
-        String stored = user.password();
-        boolean match;
-
-        try {
-            match = BCrypt.checkpw(request.password(), stored);
-        } catch (IllegalArgumentException e) {
-            // stored password is not a bcrypt hash — compare raw text instead
-            match = request.password().equals(stored);
-        }
-
-        if (!match) {
+        boolean valid = BCrypt.checkpw(request.password(), user.password());
+        if (valid) {
             throw new DataAccessException("unauthorized");
         }
 
@@ -46,4 +37,5 @@ public class LoginService {
         db.insertAuth(auth);
         return new LoginResult(auth.username(), auth.authToken());
     }
+
 }
