@@ -1,58 +1,88 @@
 package ui;
 
 import com.google.gson.Gson;
+import model.AuthData;
+import model.GameData;
+import model.CreateGameRequest;
+import model.LoginRequest;
+import model.RegisterRequest;
+import model.CreateGameResult;
+import model.ListGamesResult;
+import model.RegisterResult;
+import model.LoginResult;
 import model.*;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.List;
 
 public class ServerFacade {
-    private final String baseUrl;
+    private final String serverUrl;
     private final Gson gson = new Gson();
 
-    public ServerFacade(String baseUrl) {
-        this.baseUrl = baseUrl;
+    public ServerFacade(String serverUrl) {
+        this.serverUrl = serverUrl;
     }
 
-    public RegisterResult register(String username, String password, String email) throws IOException {
-        RegisterRequest request = new RegisterRequest(username, password, email);
-        return makePostRequest("/user", request, RegisterResult.class);
+    public AuthData register(String username, String password, String email) throws Exception {
+        RegisterRequest req = new RegisterRequest(username, password, email);
+        RegisterResult res = makeRequest("POST", "/user", req, null, RegisterResult.class);
+        return new AuthData(res.authToken(), res.username());
     }
 
-    public LoginResult login(String username, String password) throws IOException {
-        LoginRequest request = new LoginRequest(username, password);
-        return makePostRequest("/session", request, LoginResult.class);
+    public AuthData login(String username, String password) throws Exception {
+        LoginRequest req = new LoginRequest(username, password);
+        LoginResult res = makeRequest("POST", "/session", req, null, LoginResult.class);
+        return new AuthData(res.authToken(), res.username());
     }
 
-    private <T> T makePostRequest(String path, Object request, Class<T> responseClass) throws IOException {
-        URL url = new URL(baseUrl + path);
+    public void logout(String authToken) throws Exception {
+        makeRequest("DELETE", "/session", null, authToken, null);
+    }
+
+    public void createGame(String authToken, String gameName) throws Exception {
+        CreateGameRequest req = new CreateGameRequest(gameName);
+        makeRequest("POST", "/game", req, authToken, CreateGameResult.class);
+    }
+
+    public Collection<GameData> listGames(String authToken) throws Exception {
+        ListGamesResult res = makeRequest("GET", "/game", null, authToken, ListGamesResult.class);
+        return res.games();
+    }
+
+    // Generic helper
+    private <T> T makeRequest(String method, String path, Object body, String authToken, Class<T> responseType) throws Exception {
+        URL url = new URL(serverUrl + path);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod(method);
+        connection.setRequestProperty("Accept", "application/json");
+        if (authToken != null) {
+            connection.setRequestProperty("Authorization", authToken);
+        }
 
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/json");
-
-        // Write JSON body
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = gson.toJson(request).getBytes(StandardCharsets.UTF_8);
-            os.write(input);
+        if (body != null) {
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json");
+            try (OutputStream os = connection.getOutputStream()) {
+                String json = gson.toJson(body);
+                os.write(json.getBytes());
+            }
         }
 
         int status = connection.getResponseCode();
+        if (status / 100 != 2) {
+            InputStream errorStream = connection.getErrorStream();
+            String error = new String(errorStream.readAllBytes());
+            throw new Exception("Error " + status + ": " + error);
+        }
 
-        InputStream responseStream = (status >= 200 && status < 300)
-                ? connection.getInputStream()
-                : connection.getErrorStream();
+        if (responseType == null) return null;
 
-        try (InputStreamReader isr = new InputStreamReader(responseStream, StandardCharsets.UTF_8)) {
-            // If error stream, you might want to throw exception with message
-            if (status >= 400) {
-                String errorMsg = new BufferedReader(isr).lines().reduce("", (acc, line) -> acc + line);
-                throw new IOException("HTTP " + status + ": " + errorMsg);
-            }
-            return gson.fromJson(isr, responseClass);
+        try (InputStream is = connection.getInputStream();
+             InputStreamReader reader = new InputStreamReader(is)) {
+            return gson.fromJson(reader, responseType);
         }
     }
 }
