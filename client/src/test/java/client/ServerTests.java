@@ -78,15 +78,49 @@ public class ServerTests {
     public void logoutInvalidTokenFails() {
         assertThrows(Exception.class, () -> facade.logout("invalid-token"));
     }
-
+    @Test
+    public void createGameSuccess() throws Exception {
+        var auth = facade.register("diana", "hunter2", "diana@example.com");
+        var game = facade.createGame(auth.authToken(), "Game 1");
+        assertNotNull(game);
+        assertNotNull(game.gameID());
+        assertEquals("Game 1", game.gameName());
+    }
 
     @Test
     public void createGameNoAuthFails() {
         assertThrows(Exception.class, () -> facade.createGame("bad-token", "Game 1"));
+    }
+    @Test
+    public void listGamesReturnsCreatedGame() throws Exception {
+        var auth = facade.register("erin", "secret", "erin@example.com");
+        var created = facade.createGame(auth.authToken(), "Erin's Game");
+
+        var games = facade.listGames(auth.authToken());
+        assertTrue(games.stream().anyMatch(g -> g.gameName().equals("Erin's Game")));
     }
 
     @Test
     public void listGamesInvalidTokenFails() {
         assertThrows(Exception.class, () -> facade.listGames("invalid-token"));
     }
+    @Test
+    public void joinGameSuccess() throws Exception {
+        var auth = facade.register("frank", "pass123", "frank@example.com");
+        var game = facade.createGame(auth.authToken(), "Frank's Game");
+
+        // Join as white
+        facade.joinGame(auth.authToken(), game.gameID(), "WHITE");
+        // Join as observer
+        facade.joinGame(auth.authToken(), game.gameID(), null); // null for no color
+    }
+
+    @Test
+    public void joinGameInvalidTokenFails() {
+        assertThrows(Exception.class, () -> facade.joinGame("invalid", 1, "BLACK"));
+    }
+
+
+
+
 }
