@@ -1,22 +1,13 @@
 package ui;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
-import model.AuthData;
-import model.GameData;
-import model.CreateGameRequest;
-import model.LoginRequest;
-import model.RegisterRequest;
-import model.CreateGameResult;
-import model.ListGamesResult;
-import model.RegisterResult;
-import model.LoginResult;
 import model.*;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Collection;
-import java.util.List;
 
 public class ServerFacade {
     private final String serverUrl;
@@ -42,22 +33,28 @@ public class ServerFacade {
         makeRequest("DELETE", "/session", null, authToken, null);
     }
 
-    public void createGame(String authToken, String gameName) throws Exception {
+
+    public GameData createGame(String authToken, String gameName) throws Exception {
         CreateGameRequest req = new CreateGameRequest(gameName);
-        makeRequest("POST", "/game", req, authToken, CreateGameResult.class);
+        CreateGameResult res = makeRequest("POST", "/game", req, authToken, CreateGameResult.class);
+        return new GameData(res.gameID(), null, null, gameName, new ChessGame()); // you can adjust white/black usernames later
     }
 
     public Collection<GameData> listGames(String authToken) throws Exception {
         ListGamesResult res = makeRequest("GET", "/game", null, authToken, ListGamesResult.class);
         return res.games();
     }
-    public void clear() throws Exception {
-        var response = ui.sendRequest("DELETE", "/db", null, null);
-        if (response.statusCode() != 200) {
-            throw new Exception("Failed to clear database");
-        }
+
+
+    public void joinGame(String authToken, int gameID, String playerColor) throws Exception {
+        JoinGameRequest req = new JoinGameRequest(playerColor, gameID);
+        makeRequest("PUT", "/game", req, authToken, null);
     }
 
+
+    public void clear() throws Exception {
+        makeRequest("DELETE", "/db", null, null, null);
+    }
 
 
     private <T> T makeRequest(String method, String path, Object body, String authToken, Class<T> responseType) throws Exception {
