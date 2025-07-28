@@ -27,10 +27,13 @@ public class ServerFacadeTests {
         server = new Server();
         var port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
+
     }
     @BeforeEach
-    void setUp() {
-        facade = new ServerFacade("http://localhost:8080"); // Replace with your actual base URL
+    void setUp() throws Exception{
+
+        facade = new ServerFacade("http://localhost:8080");
+        facade.clear();
     }
 
     @AfterAll
@@ -123,7 +126,7 @@ public class ServerFacadeTests {
         // Join as white
         facade.joinGame(auth.authToken(), game.gameID(), "WHITE");
         // Join as observer
-        facade.joinGame(auth.authToken(), game.gameID(), null); // null for no color
+        facade.joinGame(auth.authToken(), game.gameID(), null);
     }
 
     @Test

@@ -10,6 +10,8 @@ public class PostLoginUI {
     private final ServerFacade server;
     private final AuthData auth;
     private final Scanner scanner = new Scanner(System.in);
+    private GameData[] listedGames;
+
 
     public PostLoginUI(ServerFacade server, AuthData auth) {
         this.server = server;
@@ -67,15 +69,19 @@ public class PostLoginUI {
 
     private void handleList() throws Exception {
         Collection<GameData> games = server.listGames(auth.authToken());
+        listedGames = games.toArray(new GameData[0]);
+
         System.out.println("Available Games:");
-        for (GameData game : games) {
-            System.out.printf("  ID: %d | Name: %s | White: %s | Black: %s%n",
-                    game.gameID(),
+        for (int i = 0; i < listedGames.length; i++) {
+            GameData game = listedGames[i];
+            System.out.printf("  %d. %s | White: %s | Black: %s%n",
+                    i + 1,
                     game.gameName(),
                     game.whiteUsername() != null ? game.whiteUsername() : "-",
                     game.blackUsername() != null ? game.blackUsername() : "-");
         }
     }
+
 
     private void handleJoin(String[] tokens) throws Exception {
         if (tokens.length < 2 || tokens.length > 3) {
