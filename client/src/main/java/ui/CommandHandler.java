@@ -1,4 +1,4 @@
-package client;
+package ui;
 
 import model.LoginRequest;
 import model.RegisterRequest;
