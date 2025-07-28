@@ -51,8 +51,15 @@ public class ServerFacade {
         ListGamesResult res = makeRequest("GET", "/game", null, authToken, ListGamesResult.class);
         return res.games();
     }
+    public void clear() throws Exception {
+        var response = ui.sendRequest("DELETE", "/db", null, null);
+        if (response.statusCode() != 200) {
+            throw new Exception("Failed to clear database");
+        }
+    }
 
-    // Generic helper
+
+
     private <T> T makeRequest(String method, String path, Object body, String authToken, Class<T> responseType) throws Exception {
         URL url = new URL(serverUrl + path);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
