@@ -50,13 +50,15 @@ public class PostLoginUI {
 
     private void printHelp() {
         System.out.println("""
-                Commands:
-                  create <GAME_NAME>       - Create a new game
-                  list                     - List available games
-                  join <GAME_ID> [WHITE|BLACK|<empty>] - Join a game as white/black/observe
-                  logout                   - Log out
-                """);
+            Commands:
+              create <GAME_NAME>             - Create a new game
+              list                           - List available games
+              join <GAME_NUMBER> [WHITE|BLACK] - Join a game by number and color
+                                               - Leave color blank to observe
+              logout                         - Log out
+            """);
     }
+
 
     private void handleCreate(String[] tokens) throws Exception {
         if (tokens.length != 2) {
@@ -84,15 +86,31 @@ public class PostLoginUI {
 
 
     private void handleJoin(String[] tokens) throws Exception {
-        if (tokens.length < 2 || tokens.length > 3) {
-            System.out.println("Usage: join <GAME_ID> [WHITE|BLACK]");
+        if (listedGames == null || listedGames.length == 0) {
+            System.out.println("You must 'list' games before joining.");
             return;
         }
-        int gameId = Integer.parseInt(tokens[1]);
-        String playerColor = tokens.length == 3 ? tokens[2].toUpperCase() : "";
 
-        // Placeholder - game UI coming later
-        System.out.printf("Pretending to join game %d as %s (not implemented yet).%n",
-                gameId, playerColor.isEmpty() ? "observer" : playerColor);
+        if (tokens.length < 2 || tokens.length > 3) {
+            System.out.println("Usage: join <GAME_NUMBER> [WHITE|BLACK]");
+            System.out.println("Leave color blank to observe the game.");
+            return;
+        }
+
+        int gameNum = Integer.parseInt(tokens[1]);
+        if (gameNum < 1 || gameNum > listedGames.length) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+
+        GameData selectedGame = listedGames[gameNum - 1];
+        String color = (tokens.length == 3) ? tokens[2].toUpperCase() : null;
+
+        server.joinGame(auth.authToken(), selectedGame.gameID(), color);
+        System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
+                (color == null ? "observer" : color));
+
+        System.out.println("Game UI coming soon...");
     }
+
 }
