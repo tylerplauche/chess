@@ -58,6 +58,12 @@ public class ServerFacade {
     }
 
 
+    public ChessGame getGameState(String authToken, int gameID) throws Exception {
+        return makeRequest("GET", "/game/" + gameID, null, authToken, ChessGame.class);
+    }
+
+
+
     public void clear() throws Exception {
         makeRequest("DELETE", "/db", null, null, null);
     }

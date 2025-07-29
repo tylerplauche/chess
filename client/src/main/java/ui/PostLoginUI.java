@@ -41,7 +41,7 @@ public class PostLoginUI {
                     case "create" -> handleCreate(tokens);
                     case "list" -> handleList();
                     case "join" -> handleJoin(tokens);
-                    case "observe" -> handleJoin(tokens);
+                    case "observe" -> handleObserve(tokens);
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
@@ -55,8 +55,8 @@ public class PostLoginUI {
             Commands:
               create <GAME_NAME>             - Create a new game
               list                           - List available games
-              join <GAME_NUMBER> [WHITE|BLACK] - Join a game by number and color
-                                               - Leave color blank to observe
+              join <GAME_NUMBER> [White|Black] - Join a game by number and color
+              observe <GAME_NUMBER>          - Leave color blank to observe
               logout                         - Log out
             """);
     }
@@ -112,10 +112,36 @@ public class PostLoginUI {
         System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
                 (color == null ? "observer" : color));
 
-        boolean whitePerspective = !"BLACK".equalsIgnoreCase(color);
+        boolean whitePerspective = !"Black".equalsIgnoreCase(color);
         ChessGame game = new ChessGame();
         BoardRenderer.drawBoard(game, whitePerspective);
     }
+    private void handleObserve(String[] tokens) throws Exception {
+        Collection<GameData> games = server.listGames(auth.authToken());
+        listedGames = games.toArray(new GameData[0]);
+
+        if (tokens.length != 2) {
+            System.out.println("Usage: observe <GAME_NUMBER>");
+            return;
+        }
+
+        int gameNum = Integer.parseInt(tokens[1]);
+        if (gameNum < 1 || gameNum > listedGames.length) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+        String color = "White";
+
+        GameData selectedGame = listedGames[gameNum - 1];
+        server.joinGame(auth.authToken(), selectedGame.gameID(), color);
+        System.out.printf("Observing game '%s'.%n", selectedGame.gameName());
+
+        ChessGame game = new ChessGame();
+        boolean whitePerspective = true;
+        BoardRenderer.drawBoard(game, whitePerspective);
+    }
+
+
 
 
 }
