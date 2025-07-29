@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessGame;
 import model.AuthData;
 import model.GameData;
 
@@ -106,11 +107,20 @@ public class PostLoginUI {
         GameData selectedGame = listedGames[gameNum - 1];
         String color = (tokens.length == 3) ? tokens[2].toUpperCase() : null;
 
+        // Send join request to server
         server.joinGame(auth.authToken(), selectedGame.gameID(), color);
         System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
                 (color == null ? "observer" : color));
 
-        System.out.println("Game UI coming soon...");
+        // Determine perspective: true = white, false = black
+        boolean whitePerspective = !"BLACK".equalsIgnoreCase(color);
+
+        // Retrieve game state (you must implement this on your server if not done yet)
+        ChessGame game = server.getGameState(auth.authToken(), selectedGame.gameID());
+
+        // Draw the board
+        BoardRenderer.drawBoard(game, whitePerspective);
     }
+
 
 }
