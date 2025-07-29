@@ -16,7 +16,7 @@ public class JoinGameService {
     }
 
     public JoinGameResult joinGame(String authToken, JoinGameRequest request) throws DataAccessException {
-        if (authToken == null || request.gameID() == null) {
+        if (authToken == null || request.playerColor() == null || request.gameID() == null) {
             throw new DataAccessException("bad request");
         }
 
@@ -32,9 +32,9 @@ public class JoinGameService {
 
         String username = auth.username();
         GameData updatedGame;
-        if (request.playerColor() == null) {
+        /*if (request.playerColor() == null) {
             return new JoinGameResult(); // success
-        }
+        }*/
 
         if ("white".equalsIgnoreCase(request.playerColor())) {
             if (game.whiteUsername() != null && !game.whiteUsername().equals(username)) {
