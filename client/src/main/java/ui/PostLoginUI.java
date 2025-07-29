@@ -26,7 +26,9 @@ public class PostLoginUI {
             String input = scanner.nextLine().trim();
             String[] tokens = input.split("\\s+");
 
-            if (tokens.length == 0) continue;
+            if (tokens.length == 0) {
+                continue;
+            }
 
             String command = tokens[0].toLowerCase();
 

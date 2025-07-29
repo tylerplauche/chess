@@ -88,7 +88,9 @@ public class ServerFacade {
             throw new Exception("Error " + status + ": " + error);
         }
 
-        if (responseType == null) return null;
+        if (responseType == null) {
+            return null;
+        }
 
         try (InputStream is = connection.getInputStream();
              InputStreamReader reader = new InputStreamReader(is)) {

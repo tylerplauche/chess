@@ -137,7 +137,7 @@ public class ServerFacadeTests {
         assertThrows(Exception.class, () -> facade.joinGame("invalid-token", 1, "BLACK"));
     }
     @Test
-    void clear_deletes_users_and_games() throws Exception {
+    void clearDeletesUsers() throws Exception {
         facade.register("temp", "pw", "t@email.com");
         facade.clear();
 
