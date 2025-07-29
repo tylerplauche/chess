@@ -115,8 +115,8 @@ public class PostLoginUI {
         // Determine perspective: true = white, false = black
         boolean whitePerspective = !"BLACK".equalsIgnoreCase(color);
 
-        // Retrieve game state (you must implement this on your server if not done yet)
-        ChessGame game = server.getGameState(auth.authToken(), selectedGame.gameID());
+        ChessGame game = new ChessGame();
+
 
         // Draw the board
         BoardRenderer.drawBoard(game, whitePerspective);
