@@ -21,17 +21,18 @@ public class ServerFacadeTests {
 
     private static Server server;
     private static ServerFacade facade;
+    private static int port;
 
     @BeforeAll
     public static void init() {
         server = new Server();
-        var port = server.run(0);
+        port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
 
     }
     @BeforeEach
     void setUp() throws Exception{
-        facade = new ServerFacade("http://localhost:8080");
+        facade = new ServerFacade("http://localhost:" + port);
         facade.clear();
     }
 
