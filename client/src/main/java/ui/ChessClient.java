@@ -12,10 +12,12 @@ public class ChessClient {
         System.out.println("Starting Chess Client...");
 
         while (true) {
-
             PreLoginUI preLoginUI = new PreLoginUI("http://localhost:8080");
-            preLoginUI.run();
-
+            boolean shouldQuit = preLoginUI.run();
+            if (shouldQuit) {
+                break;
+            }
         }
     }
+
 }

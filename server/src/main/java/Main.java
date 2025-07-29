@@ -14,11 +14,12 @@ public class Main {
         } catch (DataAccessException ex) {
             System.err.println("Failed to initialize database: " + ex.getMessage());
             ex.printStackTrace();
-            return; // Stop server from starting if DB setup fails
+            return;
         }
 
         Server server = new Server();
         int port = 8080;
         server.run(port);
+
     }
 }

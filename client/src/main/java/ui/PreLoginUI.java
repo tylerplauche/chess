@@ -12,7 +12,7 @@ public class PreLoginUI {
         this.server = new ServerFacade(serverUrl);
     }
 
-    public void run() {
+    public boolean run() {
         System.out.println("Welcome to Chess! Type help to begin.");
         while (true) {
             System.out.print("> ");
@@ -28,7 +28,7 @@ public class PreLoginUI {
                     case "help" -> printHelp();
                     case "quit" -> {
                         System.out.println("Goodbye!");
-                        return;
+                        return true; // Signal quit
                     }
                     case "register" -> handleRegister(tokens);
                     case "login" -> handleLogin(tokens);
@@ -39,6 +39,7 @@ public class PreLoginUI {
             }
         }
     }
+
 
     private void printHelp() {
         System.out.println("""

@@ -41,6 +41,7 @@ public class PostLoginUI {
                     case "create" -> handleCreate(tokens);
                     case "list" -> handleList();
                     case "join" -> handleJoin(tokens);
+                    case "observe" -> handleJoin(tokens);
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
@@ -51,15 +52,14 @@ public class PostLoginUI {
 
     private void printHelp() {
         System.out.println("""
-        Commands:
-          create <GAME_NAME>             - Create a new game
-          list                           - List available games
-          join <GAME_ID> [WHITE|BLACK]   - Join a game by ID and color
-                                          - Leave color blank to observe
-          logout                         - Log out
-        """);
+            Commands:
+              create <GAME_NAME>             - Create a new game
+              list                           - List available games
+              join <GAME_NUMBER> [WHITE|BLACK] - Join a game by number and color
+                                               - Leave color blank to observe
+              logout                         - Log out
+            """);
     }
-
 
 
     private void handleCreate(String[] tokens) throws Exception {
@@ -88,29 +88,34 @@ public class PostLoginUI {
 
 
     private void handleJoin(String[] tokens) throws Exception {
+        Collection<GameData> games = server.listGames(auth.authToken());
+        listedGames = games.toArray(new GameData[0]);
+
+
         if (tokens.length < 2 || tokens.length > 3) {
-            System.out.println("Usage: join <GAME_ID> [WHITE|BLACK]");
+            System.out.println("Usage: join <GAME_NUMBER> [WHITE|BLACK]");
             System.out.println("Leave color blank to observe the game.");
             return;
         }
 
-        int gameID;
-        try {
-            gameID = Integer.parseInt(tokens[1]);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid game ID.");
+        int gameNum = Integer.parseInt(tokens[1]);
+        if (gameNum < 1 || gameNum > listedGames.length) {
+            System.out.println("Invalid game number.");
             return;
         }
 
+        GameData selectedGame = listedGames[gameNum - 1];
         String color = (tokens.length == 3) ? tokens[2].toUpperCase() : null;
-        server.joinGame(auth.authToken(), gameID, color);
-        System.out.printf("Joined game ID %d as %s.%n", gameID, (color == null ? "observer" : color));
+
+
+        server.joinGame(auth.authToken(), selectedGame.gameID(), color);
+        System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
+                (color == null ? "observer" : color));
 
         boolean whitePerspective = !"BLACK".equalsIgnoreCase(color);
-        ChessGame game = new ChessGame(); // Replace with actual game state fetch if needed
+        ChessGame game = new ChessGame();
         BoardRenderer.drawBoard(game, whitePerspective);
     }
-
 
 
 }
