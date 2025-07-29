@@ -31,7 +31,6 @@ public class ServerFacadeTests {
     }
     @BeforeEach
     void setUp() throws Exception{
-
         facade = new ServerFacade("http://localhost:8080");
         facade.clear();
     }
@@ -43,68 +42,66 @@ public class ServerFacadeTests {
 
 
     @Test
-    public void registerSuccess() throws Exception {
-        AuthData auth = facade.register("alice", "password", "alice@example.com");
+    void registerSuccess() throws Exception {
+        var auth = facade.register("player1", "pass", "p1@email.com");
         assertNotNull(auth);
-        assertNotNull(auth.authToken());
-        assertEquals("alice", auth.username());
+        assertTrue(auth.authToken().length() > 10);
+        assertEquals("player1", auth.username());
     }
 
     @Test
-    public void registerDuplicateFails() throws Exception {
-        facade.register("alice", "password", "alice@example.com");
-        assertThrows(Exception.class, () -> {
-            facade.register("alice", "password", "alice@example.com");
-        });
+    void registerDuplicateFails() throws Exception {
+        facade.register("player1", "pass", "p1@email.com");
+        assertThrows(Exception.class, () ->
+                facade.register("player1", "pass", "p1@email.com")
+        );
+    }
+
+
+
+    @Test
+    void loginSuccess() throws Exception {
+        facade.register("user", "secret", "u@email.com");
+        var auth = facade.login("user", "secret");
+        assertEquals("user", auth.username());
     }
 
     @Test
-    public void loginSuccess() throws Exception {
-        facade.register("bob", "secret", "bob@example.com");
-        AuthData auth = facade.login("bob", "secret");
-        assertNotNull(auth);
-        assertEquals("bob", auth.username());
+    void loginWrongPasswordFails() throws Exception {
+        facade.register("user", "correct", "u@email.com");
+        assertThrows(Exception.class, () -> facade.login("user", "wrong"));
     }
 
     @Test
-    public void loginInvalidPasswordFails() throws Exception {
-        facade.register("bob", "secret", "bob@example.com");
-        assertThrows(Exception.class, () -> {
-            facade.login("bob", "wrongpass");
-        });
+    void loginUnknownUserFails() {
+        assertThrows(Exception.class, () -> facade.login("ghost", "pass"));
     }
 
     @Test
-    public void loginUnknownUserFails() throws Exception {
-        assertThrows(Exception.class, () -> {
-            facade.login("ghost", "pass");
-        });
-    }
-    @Test
-    public void logoutSuccess() throws Exception {
-        var auth = facade.register("charlie", "hunter2", "charlie@example.com");
+    void logoutSuccess() throws Exception {
+        var auth = facade.register("logoutUser", "pass", "l@email.com");
         facade.logout(auth.authToken());
-        // Trying to logout again should fail
-        assertThrows(Exception.class, () -> facade.logout(auth.authToken()));
+        assertThrows(Exception.class, () -> facade.logout(auth.authToken())); // token now invalid
     }
 
     @Test
-    public void logoutInvalidTokenFails() {
-        assertThrows(Exception.class, () -> facade.logout("invalid-token"));
-    }
-    @Test
-    public void createGameSuccess() throws Exception {
-        var auth = facade.register("diana", "hunter2", "diana@example.com");
-        var game = facade.createGame(auth.authToken(), "Game 1");
-        assertNotNull(game);
-        assertNotNull(game.gameID());
-        assertEquals("Game 1", game.gameName());
+    void logoutInvalidTokeFails() {
+        assertThrows(Exception.class, () -> facade.logout("bad-token"));
     }
 
     @Test
-    public void createGameNoAuthFails() {
-        assertThrows(Exception.class, () -> facade.createGame("bad-token", "Game 1"));
+    void createGameSuccess() throws Exception {
+        var auth = facade.register("gamer", "pw", "g@email.com");
+        var game = facade.createGame(auth.authToken(), "TestGame");
+        assertEquals("TestGame", game.gameName());
+        assertTrue(game.gameID() > 0);
     }
+
+    @Test
+    void createGameInvalidTokenFails() {
+        assertThrows(Exception.class, () -> facade.createGame("invalid", "Game"));
+    }
+
     @Test
     public void listGamesReturnsCreatedGame() throws Exception {
         var auth = facade.register("erin", "secret", "erin@example.com");
@@ -115,23 +112,38 @@ public class ServerFacadeTests {
     }
 
     @Test
-    public void listGamesInvalidTokenFails() {
-        assertThrows(Exception.class, () -> facade.listGames("invalid-token"));
-    }
-    @Test
-    public void joinGameSuccess() throws Exception {
-        var auth = facade.register("frank", "pass123", "frank@example.com");
-        var game = facade.createGame(auth.authToken(), "Frank's Game");
-
-        // Join as white
-        facade.joinGame(auth.authToken(), game.gameID(), "WHITE");
-        // Join as observer
-        facade.joinGame(auth.authToken(), game.gameID(), null);
+    void listGamesSuccess() throws Exception {
+        var auth = facade.register("listUser", "pw", "l@email.com");
+        facade.createGame(auth.authToken(), "Game1");
+        var games = facade.listGames(auth.authToken());
+        assertTrue(games.stream().anyMatch(g -> g.gameName().equals("Game1")));
     }
 
     @Test
-    public void joinGameInvalidTokenFails() {
-        assertThrows(Exception.class, () -> facade.joinGame("invalid", 1, "BLACK"));
+    void listGamesInvalidTokenFails() {
+        assertThrows(Exception.class, () -> facade.listGames("bad-token"));
     }
+
+    @Test
+    void joinGameAsWhiteSuccess() throws Exception {
+        var auth = facade.register("joiner", "pw", "j@email.com");
+        var game = facade.createGame(auth.authToken(), "JoinGame");
+        facade.joinGame(auth.authToken(), game.gameID(), "WHITE"); // no exception = pass
+    }
+
+
+    @Test
+    void joinGameInvalidTokenFails() {
+        assertThrows(Exception.class, () -> facade.joinGame("invalid-token", 1, "BLACK"));
+    }
+    @Test
+    void clear_deletes_users_and_games() throws Exception {
+        facade.register("temp", "pw", "t@email.com");
+        facade.clear();
+
+        assertThrows(Exception.class, () -> facade.login("temp", "pw"));
+    }
+
+
 
 }
