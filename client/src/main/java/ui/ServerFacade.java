@@ -2,17 +2,15 @@ package ui;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+
 import model.*;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.URI;
+
 import java.net.URL;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+
 import java.util.Collection;
 
 public class ServerFacade {
@@ -63,10 +61,6 @@ public class ServerFacade {
     public void clear() throws Exception {
         makeRequest("DELETE", "/db", null, null, null);
     }
-
-
-
-
 
     private <T> T makeRequest(String method, String path, Object body, String authToken, Class<T> responseType) throws Exception {
         URL url = new URL(serverUrl + path);

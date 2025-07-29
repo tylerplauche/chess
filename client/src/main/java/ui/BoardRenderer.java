@@ -16,11 +16,12 @@ public class BoardRenderer {
             ChessPiece.PieceType.PAWN,   new String[] {"♙", "♟"}
     );
 
-    // ANSI color codes for board coloring
+
     private static final String LIGHT_BG = "\u001B[47m"; // white background
-    private static final String DARK_BG = "\u001B[46m";  // cyan background
-    private static final String WHITE_FG = "\u001B[31m"; // red
-    private static final String BLACK_FG = "\u001B[34m"; // blue
+    private static final String DARK_BG = "\u001B[40m";  // black background
+    private static final String WHITE_FG = "\u001B[31m"; // red pieces
+    private static final String BLACK_FG = "\u001B[34m"; // blue pieces
+
     private static final String RESET = "\u001B[0m";
 
     public static void drawBoard(ChessGame game, boolean isWhitePerspective) {
@@ -55,7 +56,7 @@ public class BoardRenderer {
             System.out.println();
         }
 
-        // Column labels
+
         System.out.print("  ");
         for (int col = colStart; col != colEnd; col += colStep) {
             char colLabel = (char) ('a' + col - 1);
