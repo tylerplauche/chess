@@ -84,8 +84,15 @@ public class ServerFacade {
         int status = connection.getResponseCode();
         if (status / 100 != 2) {
             InputStream errorStream = connection.getErrorStream();
-            String error = new String(errorStream.readAllBytes());
-            throw new Exception("Error " + status + ": " + error);
+            String errorJson = new String(errorStream.readAllBytes());
+            String message;
+            try {
+                message = gson.fromJson(errorJson, ErrorMessage.class).message;
+            } catch (Exception e) {
+                message = errorJson.trim();
+            }
+
+            throw new Exception(" " + message);
         }
 
         if (responseType == null) {
@@ -97,4 +104,9 @@ public class ServerFacade {
             return gson.fromJson(reader, responseType);
         }
     }
+
+    private static class ErrorMessage {
+        String message;
+    }
+
 }

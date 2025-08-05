@@ -47,7 +47,7 @@ public class PostLoginUI {
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println( e.getMessage());
             }
         }
     }
@@ -55,6 +55,7 @@ public class PostLoginUI {
     private void printHelp() {
         System.out.println("""
             Commands:
+              help                           - with possible commands
               create <GAME_NAME>             - Create a new game
               list                           - List available games
               join <GAME_NUMBER> [White|Black] - Join a game by number and color
@@ -100,7 +101,13 @@ public class PostLoginUI {
             return;
         }
 
-        int gameNum = Integer.parseInt(tokens[1]);
+        int gameNum;
+        try {
+            gameNum = Integer.parseInt(tokens[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid game number. Please enter a number.");
+            return;
+        }
         if (gameNum < 1 || gameNum > listedGames.length) {
             System.out.println("Invalid game number.");
             return;
@@ -127,7 +134,13 @@ public class PostLoginUI {
             return;
         }
 
-        int gameNum = Integer.parseInt(tokens[1]);
+        int gameNum;
+        try {
+            gameNum = Integer.parseInt(tokens[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid game number. Please enter a number.");
+            return;
+        }
         if (gameNum < 1 || gameNum > listedGames.length) {
             System.out.println("Invalid game number.");
             return;

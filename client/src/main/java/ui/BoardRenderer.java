@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class BoardRenderer {
 
-    // Unicode chess symbols
+
     private static final Map<ChessPiece.PieceType, String[]> UNICODE = Map.of(
             ChessPiece.PieceType.KING,   new String[] {"♔", "♚"},
             ChessPiece.PieceType.QUEEN,  new String[] {"♕", "♛"},
@@ -40,7 +40,7 @@ public class BoardRenderer {
             for (int col = colStart; col != colEnd; col += colStep) {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(pos);
-                boolean lightSquare = (row + col) % 2 == 0;
+                boolean lightSquare = (row + col) % 2 != 0;
                 String bg = lightSquare ? LIGHT_BG : DARK_BG;
 
                 String symbol = " ";

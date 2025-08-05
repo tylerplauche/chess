@@ -30,14 +30,14 @@ public class PreLoginUI {
                     case "help" -> printHelp();
                     case "quit" -> {
                         System.out.println("Goodbye!");
-                        return true; // Signal quit
+                        return true;
                     }
                     case "register" -> handleRegister(tokens);
                     case "login" -> handleLogin(tokens);
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println( e.getMessage());
             }
         }
     }
@@ -46,8 +46,9 @@ public class PreLoginUI {
     private void printHelp() {
         System.out.println("""
                 Commands:
+                  help                                   - with possible commands
                   register <USERNAME> <PASSWORD> <EMAIL> - Register a new user
-                  login <USERNAME> <PASSWORD>           - Log in as an existing user
+                  login <USERNAME> <PASSWORD>            - Log in as an existing user
                   quit                                   - Exit the program
                 """);
     }
