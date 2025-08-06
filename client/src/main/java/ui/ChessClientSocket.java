@@ -1,4 +1,4 @@
-package websocket;
+package ui;
 
 import model.WebSocketMessage;
 import org.eclipse.jetty.websocket.api.Session;
@@ -19,6 +19,7 @@ public class ChessClientSocket extends WebSocketAdapter {
     public void onWebSocketText(String message) {
         WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
         onMessage.accept(msg);
+        System.out.println("✅ WebSocket connected");
     }
 
     public void send(String json) throws Exception {

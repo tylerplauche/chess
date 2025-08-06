@@ -1,7 +1,6 @@
 package websocket;
 
 import chess.ChessGame;
-import chess.ChessMove;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.sql.MySqlDataAccess;
@@ -9,17 +8,15 @@ import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChessWebSocketHandler extends WebSocketAdapter {
     private static final Gson gson = new Gson();
     private static final DataAccess db = new MySqlDataAccess();
 
-    // gameId -> Set of Sessions
     private static final Map<Integer, Set<Session>> gameSessions = new ConcurrentHashMap<>();
-
-    // Session -> gameId (for cleanup)
     private static final Map<Session, Integer> sessionToGame = new ConcurrentHashMap<>();
 
     @Override
@@ -31,7 +28,6 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
     @Override
     public void onWebSocketText(String message) {
         Session session = getSession();
-
         try {
             WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
             if (msg == null || msg.type == null) {
@@ -40,20 +36,20 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
             }
 
             switch (msg.type) {
-                case "join" -> handleJoin(session, msg);
-                case "move" -> handleMove(session, msg);
+                case "join" -> processJoin(session, msg);
+                case "move" -> processMove(session, msg);
                 default -> sendError(session, "Unknown message type: " + msg.type);
             }
 
         } catch (Exception e) {
-            sendError(session, "Error processing message: " + e.getMessage());
+            sendError(session, "Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void handleJoin(Session session, WebSocketMessage msg) throws Exception {
+    private void processJoin(Session session, WebSocketMessage msg) throws Exception {
         if (msg.gameId == null) {
-            sendError(session, "Missing gameId in join request.");
+            sendError(session, "Missing gameId.");
             return;
         }
 
@@ -63,16 +59,13 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
             return;
         }
 
-        // Register session
         gameSessions.computeIfAbsent(msg.gameId, k -> ConcurrentHashMap.newKeySet()).add(session);
         sessionToGame.put(session, msg.gameId);
 
-        // Send current game state
-        String response = gson.toJson(new OutgoingMessage("gameState", gameData.game()));
-        session.getRemote().sendString(response);
+        sendGameState(session, gameData.game());
     }
 
-    private void handleMove(Session session, WebSocketMessage msg) throws Exception {
+    private void processMove(Session session, WebSocketMessage msg) throws Exception {
         if (msg.gameId == null || msg.move == null) {
             sendError(session, "Missing gameId or move.");
             return;
@@ -93,18 +86,20 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
             return;
         }
 
-        // Update database
-        GameData updated = new GameData(
+        db.updateGame(new GameData(
                 gameData.gameID(),
                 gameData.whiteUsername(),
                 gameData.blackUsername(),
                 gameData.gameName(),
                 game
-        );
-        db.updateGame(updated);
+        ));
 
-        // Broadcast updated game state
         broadcastToGame(msg.gameId, new OutgoingMessage("gameState", game));
+    }
+
+    private void sendGameState(Session session, ChessGame game) throws Exception {
+        String json = gson.toJson(new OutgoingMessage("gameState", game));
+        session.getRemote().sendString(json);
     }
 
     private void broadcastToGame(int gameId, OutgoingMessage message) throws Exception {
@@ -132,6 +127,7 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
     public void onWebSocketClose(int statusCode, String reason) {
         Session session = getSession();
         Integer gameId = sessionToGame.remove(session);
+
         if (gameId != null) {
             Set<Session> sessions = gameSessions.get(gameId);
             if (sessions != null) {
@@ -141,6 +137,7 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
                 }
             }
         }
+
         System.out.println("WebSocket closed: " + reason);
         super.onWebSocketClose(statusCode, reason);
     }

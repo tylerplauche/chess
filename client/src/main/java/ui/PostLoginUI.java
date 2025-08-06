@@ -105,13 +105,13 @@ public class PostLoginUI {
         System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
                 (color == null ? "observer" : color));
 
-        // Step 1: Construct WebSocketFacade
+
         WebSocketFacade ws = new WebSocketFacade();
 
-// Step 2: Create the GameplayUI, passing in ws, gameId, username, and color
+
         GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
 
-// Step 3: Connect the WebSocket and start the UI
+
         try {
             ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
             ws.sendJoin(selectedGame.gameID(), color);

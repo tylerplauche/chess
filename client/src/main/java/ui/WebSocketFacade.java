@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import model.OutgoingMessage;
 import model.WebSocketMessage;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
-import websocket.ChessClientSocket;
+import ui.ChessClientSocket;
 
 import java.net.URI;
 import java.util.function.Consumer;

@@ -3,6 +3,7 @@ package ui;
 import chess.*;
 
 import model.WebSocketMessage;
+
 import java.util.Scanner;
 
 public class GameplayUI {
@@ -21,22 +22,27 @@ public class GameplayUI {
     }
 
     public void run() {
-        System.out.println("\nJoined game " + gameId + " as " + playerColor + ".");
+        System.out.println("\n▶ Joined game " + gameId + " as " + playerColor + ".");
 
         try {
             ws.connect("ws://localhost:8080/connect", this::handleMessage);
             ws.sendJoin(gameId, playerColor);
         } catch (Exception e) {
-            System.out.println("WebSocket connection failed: " + e.getMessage());
+            System.out.println("Failed to connect to WebSocket: " + e.getMessage());
             return;
         }
 
+        gameLoop();
+    }
+
+    private void gameLoop() {
         while (true) {
-            System.out.println("\nChoose a command:");
+            System.out.println("\n--- Game Menu ---");
             System.out.println("1. Make Move");
             System.out.println("2. Resign");
             System.out.println("3. Refresh Board");
             System.out.println("4. Leave Game");
+            System.out.print("Select an option: ");
 
             String input = scanner.nextLine().trim();
 
@@ -49,10 +55,10 @@ public class GameplayUI {
                 }
                 case "3" -> printBoard();
                 case "4" -> {
-                    System.out.println("Exiting game...");
+                    System.out.println(" Exiting game...");
                     return;
                 }
-                default -> System.out.println("Invalid choice.");
+                default -> System.out.println("Invalid choice. Try again.");
             }
         }
     }
@@ -61,56 +67,52 @@ public class GameplayUI {
         try {
             System.out.print("Enter start position (e.g., e2): ");
             String from = scanner.nextLine().trim();
+
             System.out.print("Enter end position (e.g., e4): ");
             String to = scanner.nextLine().trim();
 
             ChessPosition start = parsePosition(from);
             ChessPosition end = parsePosition(to);
 
-            ChessMove move = new ChessMove(start, end, null); // TODO: add promotion if needed
+            ChessMove move = new ChessMove(start, end, null); // Promotion not implemented
             ws.sendMove(gameId, move);
         } catch (Exception e) {
-            System.out.println("Invalid move format.");
+            System.out.println("⚠ Invalid move format. Use notation like 'e2' and 'e4'.");
         }
     }
 
     private ChessPosition parsePosition(String pos) {
-        int col = pos.charAt(0) - 'a' + 1;
+        int col = pos.toLowerCase().charAt(0) - 'a' + 1;
         int row = Integer.parseInt(pos.substring(1));
         return new ChessPosition(row, col);
     }
 
     public void handleMessage(WebSocketMessage message) {
         String type = message.getServerMessageType();
+
         if (type == null) {
-            System.out.println("Received null message type from server.");
+            System.out.println("⚠ Received null message type.");
             return;
         }
 
         switch (type) {
-            case "LOAD_GAME":
+            case "LOAD_GAME" -> {
                 ChessGame loadedGame = message.getGame();
                 if (loadedGame != null) {
-                    this.gameState = loadedGame;
+                    gameState = loadedGame;
                     printBoard();
                 } else {
-                    System.out.println("Error: received LOAD_GAME but game is null.");
+                    System.out.println("⚠ LOAD_GAME received but no game data found.");
                 }
-                break;
+            }
 
-            case "ERROR":
-                System.out.println("Server error: " + message.getErrorMessage());
-                break;
+            case "ERROR" -> System.out.println(" Server error: " + message.getErrorMessage());
 
-            case "NOTIFICATION":
-                System.out.println("Server: " + message.getMessage());
-                break;
+            case "NOTIFICATION" -> System.out.println("📢 Server: " + message.getMessage());
 
-            default:
-                System.out.println("Unknown server message type: " + type);
+            default -> System.out.println("Unknown message type: " + type);
         }
     }
-
 
     private void printBoard() {
         boolean isWhite = playerColor.equalsIgnoreCase("WHITE");
