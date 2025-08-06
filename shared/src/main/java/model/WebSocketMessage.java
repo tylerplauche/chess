@@ -1,10 +1,17 @@
 package model;
 
+import chess.ChessGame;
 import chess.ChessMove;
 
 public class WebSocketMessage {
-    public String type;      // "join" or "move"
-    public Integer gameId;
-    public ChessMove move;   // Only used if type is "move"
-    public String authToken; // Optional: can be used to validate
+    private String serverMessageType;
+    private ChessGame game;
+    private String errorMessage;
+    private String message;
+
+    // Getters
+    public String getServerMessageType() { return serverMessageType; }
+    public ChessGame getGame() { return game; }
+    public String getErrorMessage() { return errorMessage; }
+    public String getMessage() { return message; }
 }

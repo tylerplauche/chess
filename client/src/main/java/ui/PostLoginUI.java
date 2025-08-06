@@ -12,10 +12,6 @@ public class PostLoginUI {
     private final AuthData auth;
     private final Scanner scanner = new Scanner(System.in);
     private GameData[] listedGames;
-    private ChessGame currentGame;
-    private boolean isWhitePerspective = true; // can toggle based on player's color
-
-
 
     public PostLoginUI(ServerFacade server, AuthData auth) {
         this.server = server;
@@ -47,18 +43,10 @@ public class PostLoginUI {
                     case "list" -> handleList();
                     case "join" -> handleJoin(tokens);
                     case "observe" -> handleObserve(tokens);
-                    case "board" -> {
-                        if (currentGame == null) {
-                            System.out.println("You are not currently in a game.");
-                        } else {
-                            BoardRenderer.drawBoard(currentGame, isWhitePerspective);
-                        }
-                    }
-
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
-                System.out.println( e.getMessage());
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
@@ -66,16 +54,14 @@ public class PostLoginUI {
     private void printHelp() {
         System.out.println("""
             Commands:
-              help                           - with possible commands
-              create <GAME_NAME>             - Create a new game
-              list                           - List available games
+              help                             - Show available commands
+              create <GAME_NAME>               - Create a new game
+              list                             - List available games
               join <GAME_NUMBER> [White|Black] - Join a game by number and color
-              observe <GAME_NUMBER>          - Leave color blank to observe
-              board                          - Display the current game board
-              logout                         - Log out
-            """);
+              observe <GAME_NUMBER>            - Observe a game by number
+              logout                           - Log out
+        """);
     }
-
 
     private void handleCreate(String[] tokens) throws Exception {
         if (tokens.length != 2) {
@@ -101,74 +87,70 @@ public class PostLoginUI {
         }
     }
 
-
     private void handleJoin(String[] tokens) throws Exception {
-        Collection<GameData> games = server.listGames(auth.authToken());
-        listedGames = games.toArray(new GameData[0]);
-
-
         if (tokens.length < 2 || tokens.length > 3) {
-            System.out.println("Usage: join <GAME_NUMBER> [WHITE|BLACK]");
-            System.out.println("Leave color blank to observe the game.");
+            System.out.println("Usage: join <GAME_NUMBER> [White|Black]");
             return;
         }
 
-        int gameNum;
-        try {
-            gameNum = Integer.parseInt(tokens[1]);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid game number. Please enter a number.");
-            return;
-        }
+        int gameNum = Integer.parseInt(tokens[1]);
         if (gameNum < 1 || gameNum > listedGames.length) {
             System.out.println("Invalid game number.");
             return;
         }
 
-        GameData selectedGame = listedGames[gameNum - 1];
         String color = (tokens.length == 3) ? tokens[2].toUpperCase() : null;
-
-
+        GameData selectedGame = listedGames[gameNum - 1];
         server.joinGame(auth.authToken(), selectedGame.gameID(), color);
         System.out.printf("Joined game '%s' as %s.%n", selectedGame.gameName(),
                 (color == null ? "observer" : color));
 
-        boolean whitePerspective = !"Black".equalsIgnoreCase(color);
-        ChessGame game = new ChessGame();
-        BoardRenderer.drawBoard(game, whitePerspective);
-    }
-    private void handleObserve(String[] tokens) throws Exception {
-        Collection<GameData> games = server.listGames(auth.authToken());
-        listedGames = games.toArray(new GameData[0]);
+        // Step 1: Construct WebSocketFacade
+        WebSocketFacade ws = new WebSocketFacade();
 
+// Step 2: Create the GameplayUI, passing in ws, gameId, username, and color
+        GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
+
+// Step 3: Connect the WebSocket and start the UI
+        try {
+            ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
+            ws.sendJoin(selectedGame.gameID(), color);
+            gameplay.run();
+        } catch (Exception e) {
+            System.out.println("WebSocket connection failed: " + e.getMessage());
+        }
+
+    }
+
+    private void handleObserve(String[] tokens) throws Exception {
+        String color = null;
         if (tokens.length != 2) {
             System.out.println("Usage: observe <GAME_NUMBER>");
             return;
         }
 
-        int gameNum;
-        try {
-            gameNum = Integer.parseInt(tokens[1]);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid game number. Please enter a number.");
-            return;
-        }
+        int gameNum = Integer.parseInt(tokens[1]);
         if (gameNum < 1 || gameNum > listedGames.length) {
             System.out.println("Invalid game number.");
             return;
         }
-        String color = "White";
 
         GameData selectedGame = listedGames[gameNum - 1];
-        server.joinGame(auth.authToken(), selectedGame.gameID(), color);
+        server.joinGame(auth.authToken(), selectedGame.gameID(), null);
         System.out.printf("Observing game '%s'.%n", selectedGame.gameName());
 
-        ChessGame game = new ChessGame();
-        boolean whitePerspective = true;
-        BoardRenderer.drawBoard(game, whitePerspective);
+        WebSocketFacade ws = new WebSocketFacade();
+
+        GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
+
+        try {
+            ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
+            ws.sendJoin(selectedGame.gameID(), color);
+            gameplay.run();
+        } catch (Exception e) {
+            System.out.println("WebSocket connection failed: " + e.getMessage());
+        }
+
     }
-
-
-
-
 }
+

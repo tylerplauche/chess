@@ -7,6 +7,7 @@ import java.util.Scanner;
 public class PreLoginUI {
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
+    private final WebSocketFacade webSocket = new WebSocketFacade();
 
     public PreLoginUI(String serverUrl) {
         this.server = new ServerFacade(serverUrl);
@@ -37,11 +38,10 @@ public class PreLoginUI {
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
-                System.out.println( e.getMessage());
+                System.out.println(e.getMessage());
             }
         }
     }
-
 
     private void printHelp() {
         System.out.println("""

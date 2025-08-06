@@ -16,10 +16,11 @@ public class WebSocketFacade {
     private final Gson gson = new Gson();
 
     public void connect(String uri, Consumer<WebSocketMessage> onMessage) throws Exception {
-        socket = new ChessClientSocket(onMessage);
         client.start();
+        socket = new ChessClientSocket(onMessage);
         client.connect(socket, new URI(uri)).get();
     }
+
 
     private void send(OutgoingMessage message) throws Exception {
         String json = gson.toJson(message);
