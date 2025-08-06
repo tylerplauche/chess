@@ -12,6 +12,9 @@ public class PostLoginUI {
     private final AuthData auth;
     private final Scanner scanner = new Scanner(System.in);
     private GameData[] listedGames;
+    private ChessGame currentGame;
+    private boolean isWhitePerspective = true; // can toggle based on player's color
+
 
 
     public PostLoginUI(ServerFacade server, AuthData auth) {
@@ -44,6 +47,14 @@ public class PostLoginUI {
                     case "list" -> handleList();
                     case "join" -> handleJoin(tokens);
                     case "observe" -> handleObserve(tokens);
+                    case "board" -> {
+                        if (currentGame == null) {
+                            System.out.println("You are not currently in a game.");
+                        } else {
+                            BoardRenderer.drawBoard(currentGame, isWhitePerspective);
+                        }
+                    }
+
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
@@ -60,6 +71,7 @@ public class PostLoginUI {
               list                           - List available games
               join <GAME_NUMBER> [White|Black] - Join a game by number and color
               observe <GAME_NUMBER>          - Leave color blank to observe
+              board                          - Display the current game board
               logout                         - Log out
             """);
     }
