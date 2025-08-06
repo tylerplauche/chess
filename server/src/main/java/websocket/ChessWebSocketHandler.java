@@ -9,13 +9,18 @@ import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChessWebSocketHandler extends WebSocketAdapter {
-    private static final Map<Session, Integer> sessions = new ConcurrentHashMap<>();
-    private static final DataAccess db = new MySqlDataAccess();
     private static final Gson gson = new Gson();
+    private static final DataAccess db = new MySqlDataAccess();
+
+    // gameId -> Set of Sessions
+    private static final Map<Integer, Set<Session>> gameSessions = new ConcurrentHashMap<>();
+
+    // Session -> gameId (for cleanup)
+    private static final Map<Session, Integer> sessionToGame = new ConcurrentHashMap<>();
 
     @Override
     public void onWebSocketConnect(Session session) {
@@ -29,7 +34,6 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
 
         try {
             WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
-
             if (msg == null || msg.type == null) {
                 sendError(session, "Invalid message format.");
                 return;
@@ -53,21 +57,24 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
             return;
         }
 
-        sessions.put(session, msg.gameId);
         GameData gameData = db.getGame(msg.gameId);
-
         if (gameData == null) {
             sendError(session, "Game not found.");
             return;
         }
 
+        // Register session
+        gameSessions.computeIfAbsent(msg.gameId, k -> ConcurrentHashMap.newKeySet()).add(session);
+        sessionToGame.put(session, msg.gameId);
+
+        // Send current game state
         String response = gson.toJson(new OutgoingMessage("gameState", gameData.game()));
         session.getRemote().sendString(response);
     }
 
     private void handleMove(Session session, WebSocketMessage msg) throws Exception {
         if (msg.gameId == null || msg.move == null) {
-            sendError(session, "Missing gameId or move in move request.");
+            sendError(session, "Missing gameId or move.");
             return;
         }
 
@@ -86,6 +93,7 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
             return;
         }
 
+        // Update database
         GameData updated = new GameData(
                 gameData.gameID(),
                 gameData.whiteUsername(),
@@ -95,25 +103,25 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
         );
         db.updateGame(updated);
 
+        // Broadcast updated game state
         broadcastToGame(msg.gameId, new OutgoingMessage("gameState", game));
     }
 
     private void broadcastToGame(int gameId, OutgoingMessage message) throws Exception {
         String json = gson.toJson(message);
-        for (Map.Entry<Session, Integer> entry : sessions.entrySet()) {
-            if (entry.getValue().equals(gameId)) {
-                Session s = entry.getKey();
-                if (s.isOpen()) {
-                    s.getRemote().sendString(json);
-                }
+        Set<Session> sessions = gameSessions.getOrDefault(gameId, Set.of());
+
+        for (Session s : sessions) {
+            if (s.isOpen()) {
+                s.getRemote().sendString(json);
             }
         }
     }
 
-    private void sendError(Session session, String message) {
+    private void sendError(Session session, String error) {
         try {
             if (session != null && session.isOpen()) {
-                session.getRemote().sendString(gson.toJson(new OutgoingMessage("error", message)));
+                session.getRemote().sendString(gson.toJson(new OutgoingMessage("error", error)));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,7 +130,17 @@ public class ChessWebSocketHandler extends WebSocketAdapter {
 
     @Override
     public void onWebSocketClose(int statusCode, String reason) {
-        sessions.remove(getSession());
+        Session session = getSession();
+        Integer gameId = sessionToGame.remove(session);
+        if (gameId != null) {
+            Set<Session> sessions = gameSessions.get(gameId);
+            if (sessions != null) {
+                sessions.remove(session);
+                if (sessions.isEmpty()) {
+                    gameSessions.remove(gameId);
+                }
+            }
+        }
         System.out.println("WebSocket closed: " + reason);
         super.onWebSocketClose(statusCode, reason);
     }
