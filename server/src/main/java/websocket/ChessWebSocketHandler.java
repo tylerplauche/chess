@@ -1,80 +1,72 @@
 package websocket;
 
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.*;
+import chess.ChessGame;
+import chess.ChessMove;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
-import model.*;
+import dataaccess.sql.MySqlDataAccess;
+import model.GameData;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@WebSocket
-public class ChessWebSocketHandler {
-    private static final ConcurrentHashMap<Integer, Session> sessions = new ConcurrentHashMap<>();
-    private final DataAccess dataAccess;
-    private final Gson gson = new Gson();
+public class ChessWebSocketHandler extends WebSocketAdapter {
+    private static final Map<Session, Integer> sessions = new ConcurrentHashMap<>();
+    private static final DataAccess db = new MySqlDataAccess();
+    private static final Gson gson = new Gson();
 
-    public ChessWebSocketHandler(DataAccess dataAccess) {
-        this.dataAccess = dataAccess;
+    @Override
+    public void onWebSocketConnect(Session session) {
+        super.onWebSocketConnect(session);
+        System.out.println("WebSocket connected: " + session);
     }
 
-    @OnWebSocketConnect
-    public void onConnect(Session session) {
-        System.out.println("Connected: " + session);
-        // You’ll probably want to track which game and user this is
-    }
-
-    @OnWebSocketMessage
-    public void onMessage(Session session, String message) {
+    @Override
+    public void onWebSocketText(String message) {
         try {
-            // Deserialize message (e.g., move or join)
             WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
+            Session session = getSession();
 
-            if (msg.type.equals("move")) {
-                GameData gameData = dataAccess.getGame(msg.gameId);
-                ChessGame game = gameData.getGame();
+            if ("join".equals(msg.type)) {
+                sessions.put(session, msg.gameId);
+                GameData gameData = db.getGame(msg.gameId);
+                session.getRemote().sendString(gson.toJson(gameData.game()));
+            }
 
-                game.makeMove(msg.move); // Handle exceptions
-                gameData = new GameData(
+            if ("move".equals(msg.type)) {
+                GameData gameData = db.getGame(msg.gameId);
+                ChessGame game = gameData.game();
+                game.makeMove(msg.move);
+
+
+                GameData updated = new GameData(
                         gameData.gameID(),
                         gameData.whiteUsername(),
                         gameData.blackUsername(),
                         gameData.gameName(),
                         game
                 );
-                dataAccess.updateGame(gameData);
+                db.updateGame(updated);
 
-                String gameJson = gson.toJson(game);
-                broadcastToAll(msg.gameId, gameJson);
+                // Broadcast to all in same game
+                for (Map.Entry<Session, Integer> entry : sessions.entrySet()) {
+                    if (entry.getValue().equals(msg.gameId)) {
+                        entry.getKey().getRemote().sendString(gson.toJson(game));
+                    }
+                }
             }
 
-            if (msg.type.equals("join")) {
-                sessions.put(msg.gameId, session);
-                GameData gameData = dataAccess.getGame(msg.gameId);
-                String gameJson = gson.toJson(gameData.getGame());
-                session.getRemote().sendString(gameJson);
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    @OnWebSocketClose
-    public void onClose(Session session, int statusCode, String reason) {
-        System.out.println("Disconnected: " + session);
-        sessions.values().remove(session);
-    }
-
-    private void broadcastToAll(int gameId, String message) {
-        sessions.forEach((id, session) -> {
-            if (id == gameId && session.isOpen()) {
-                try {
-                    session.getRemote().sendString(message);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+    @Override
+    public void onWebSocketClose(int statusCode, String reason) {
+        sessions.remove(getSession());
+        System.out.println("WebSocket closed: " + reason);
+        super.onWebSocketClose(statusCode, reason);
     }
 }

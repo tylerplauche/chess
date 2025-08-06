@@ -8,7 +8,8 @@ import dataaccess.sql.MySqlDataAccess;
 import spark.Spark;
 import service.LogoutService;
 
-
+import static spark.Spark.webSocket;
+import websocket.ChessWebSocketHandler;
 
 public class Server {
     private  DataAccess db = new MySqlDataAccess();
@@ -18,6 +19,8 @@ public class Server {
     public int run(int desiredPort) {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
+
+        webSocket("/connect", ChessWebSocketHandler.class);
 
 
 
@@ -31,7 +34,7 @@ public class Server {
         Spark.delete("/session", new LogoutHandler(logoutService));
 
 
-        //This line initializes the server and can be removed once you have a functioning endpoint 
+        //This line initializes the server and can be removed once you have a functioning endpoint
         Spark.init();
 
         Spark.awaitInitialization();
@@ -43,3 +46,4 @@ public class Server {
         Spark.awaitStop();
     }
 }
+
