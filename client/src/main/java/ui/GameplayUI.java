@@ -2,6 +2,7 @@ package ui;
 
 import chess.*;
 
+import com.google.gson.Gson;
 import model.WebSocketMessage;
 
 import java.util.Scanner;
@@ -10,6 +11,7 @@ public class GameplayUI {
     private final Scanner scanner = new Scanner(System.in);
     private final WebSocketFacade ws;
     private final int gameId;
+    private static final Gson gson = new Gson();
     private final String username;
     private final String playerColor;
     private ChessGame gameState = new ChessGame();
@@ -26,7 +28,7 @@ public class GameplayUI {
 
         try {
             ws.connect("ws://localhost:8080/connect", this::handleMessage);
-            ws.sendJoin(gameId, playerColor);
+            //ws.sendJoin(gameId, playerColor);
         } catch (Exception e) {
             System.out.println("Failed to connect to WebSocket: " + e.getMessage());
             return;
@@ -102,12 +104,12 @@ public class GameplayUI {
                     gameState = loadedGame;
                     printBoard();
                 } else {
-                    System.out.println("⚠ Received game update but no game data found.");
+                    System.out.println("Received game update but no game data found.");
                 }
             }
-            case "ERROR" -> System.out.println(" Server error: " + message.errorMessage);
+            case "ERROR" -> System.out.println("Server error: " + message.errorMessage);
 
-            case "NOTIFICATION" -> System.out.println("📢 Server: " + message.message);
+            case "NOTIFICATION" -> System.out.println("Server: " + message.message);
 
             default -> System.out.println("Unknown message type: " + type);
         }

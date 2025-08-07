@@ -35,7 +35,7 @@ public class ChessWebSocketHandler {
 
                     if (session.isOpen() && gameData != null) {
                         WebSocketMessage loadMsg = new WebSocketMessage();
-                        loadMsg.type = "joinAck";
+                        loadMsg.type = "gameUpdate";
                         loadMsg.game = gameData.game();
 
                         session.getRemote().sendString(gson.toJson(loadMsg), null);
@@ -61,7 +61,7 @@ public class ChessWebSocketHandler {
                     dataAccess.updateGame(updated);
 
                     WebSocketMessage updateMsg = new WebSocketMessage();
-                    updateMsg.type = "LOAD_GAME";  // use 'type', and use the type your client expects
+                    updateMsg.type = "gameUpdate";  // use 'type', and use the type your client expects
                     updateMsg.game = game;
 
                     String gameJson = gson.toJson(updateMsg);

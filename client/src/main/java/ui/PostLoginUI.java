@@ -88,6 +88,8 @@ public class PostLoginUI {
     }
 
     private void handleJoin(String[] tokens) throws Exception {
+        Collection<GameData> games = server.listGames(auth.authToken());
+        listedGames = games.toArray(new GameData[0]);
         if (tokens.length < 2 || tokens.length > 3) {
             System.out.println("Usage: join <GAME_NUMBER> [White|Black]");
             return;
@@ -113,8 +115,8 @@ public class PostLoginUI {
 
 
         try {
-            ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
-            ws.sendJoin(selectedGame.gameID(), color);
+            //ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
+            //ws.sendJoin(selectedGame.gameID(), color);
             gameplay.run();
         } catch (Exception e) {
             System.out.println("WebSocket connection failed: " + e.getMessage());
@@ -144,7 +146,7 @@ public class PostLoginUI {
         GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
 
         try {
-            ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
+            //ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
             ws.sendJoin(selectedGame.gameID(), color);
             gameplay.run();
         } catch (Exception e) {
