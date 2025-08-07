@@ -34,14 +34,15 @@ public class ChessWebSocketHandler {
                     GameData gameData = dataAccess.getGame(msg.gameId);
 
                     if (session.isOpen() && gameData != null) {
-                        WebSocketMessage joinMsg = new WebSocketMessage();
-                        joinMsg.serverMessageType = "joinAck";
-                        joinMsg.game = gameData.game();
+                        WebSocketMessage loadMsg = new WebSocketMessage();
+                        loadMsg.type = "joinAck";
+                        loadMsg.game = gameData.game();
 
-                        session.getRemote().sendString(gson.toJson(joinMsg), null);
+                        session.getRemote().sendString(gson.toJson(loadMsg), null);
                         System.out.println("Player joined game: " + msg.gameId);
                     }
                 }
+
 
                 case "move" -> {
                     GameData gameData = dataAccess.getGame(msg.gameId);
@@ -60,7 +61,7 @@ public class ChessWebSocketHandler {
                     dataAccess.updateGame(updated);
 
                     WebSocketMessage updateMsg = new WebSocketMessage();
-                    updateMsg.serverMessageType = "gameUpdate"; // or "update"
+                    updateMsg.type = "LOAD_GAME";  // use 'type', and use the type your client expects
                     updateMsg.game = game;
 
                     String gameJson = gson.toJson(updateMsg);
@@ -72,6 +73,7 @@ public class ChessWebSocketHandler {
                         }
                     }
                 }
+
 
                 default -> System.out.println("Unrecognized message type: " + msg.type);
             }

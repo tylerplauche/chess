@@ -88,7 +88,7 @@ public class GameplayUI {
     }
 
     public void handleMessage(WebSocketMessage message) {
-        String type = message.getServerMessageType();
+        String type = message.type;
 
         if (type == null) {
             System.out.println("⚠ Received null message type.");
@@ -96,23 +96,23 @@ public class GameplayUI {
         }
 
         switch (type) {
-            case "LOAD_GAME" -> {
-                ChessGame loadedGame = message.getGame();
+            case "joinAck", "gameUpdate" -> {
+                ChessGame loadedGame = message.game;
                 if (loadedGame != null) {
                     gameState = loadedGame;
                     printBoard();
                 } else {
-                    System.out.println("⚠ LOAD_GAME received but no game data found.");
+                    System.out.println("⚠ Received game update but no game data found.");
                 }
             }
+            case "ERROR" -> System.out.println(" Server error: " + message.errorMessage);
 
-            case "ERROR" -> System.out.println(" Server error: " + message.getErrorMessage());
-
-            case "NOTIFICATION" -> System.out.println("📢 Server: " + message.getMessage());
+            case "NOTIFICATION" -> System.out.println("📢 Server: " + message.message);
 
             default -> System.out.println("Unknown message type: " + type);
         }
     }
+
 
     private void printBoard() {
         boolean isWhite = playerColor.equalsIgnoreCase("WHITE");

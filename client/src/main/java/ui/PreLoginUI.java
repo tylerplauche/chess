@@ -7,10 +7,9 @@ import java.util.Scanner;
 public class PreLoginUI {
     private final ServerFacade server;
     private final Scanner scanner = new Scanner(System.in);
-    private final WebSocketFacade webSocket = new WebSocketFacade();
 
-    public PreLoginUI(String serverUrl) {
-        this.server = new ServerFacade(serverUrl);
+    public PreLoginUI(String serverHttpUrl) {
+        this.server = new ServerFacade(serverHttpUrl);
     }
 
     public boolean run() {
@@ -18,12 +17,10 @@ public class PreLoginUI {
         while (true) {
             System.out.print("> ");
             String input = scanner.nextLine().trim();
-            String[] tokens = input.split("\\s+");
-
-            if (tokens.length == 0) {
+            if (input.isEmpty()) {
                 continue;
             }
-
+            String[] tokens = input.split("\\s+");
             String command = tokens[0].toLowerCase();
 
             try {
@@ -38,7 +35,7 @@ public class PreLoginUI {
                     default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
                 }
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("Error: " + e.getMessage());
             }
         }
     }
@@ -46,7 +43,7 @@ public class PreLoginUI {
     private void printHelp() {
         System.out.println("""
                 Commands:
-                  help                                   - with possible commands
+                  help                                   - Show this help message
                   register <USERNAME> <PASSWORD> <EMAIL> - Register a new user
                   login <USERNAME> <PASSWORD>            - Log in as an existing user
                   quit                                   - Exit the program
