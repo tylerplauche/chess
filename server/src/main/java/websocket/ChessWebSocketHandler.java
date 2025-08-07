@@ -1,149 +1,85 @@
 package websocket;
 
 import chess.ChessGame;
+import chess.ChessMove;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
+import dataaccess.DataAccessException;
 import dataaccess.sql.MySqlDataAccess;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.WebSocketAdapter;
+import org.eclipse.jetty.websocket.api.annotations.*;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChessWebSocketHandler extends WebSocketAdapter {
-    private static final Gson gson = new Gson();
-    private static final DataAccess db = new MySqlDataAccess();
+@WebSocket
+public class ChessWebSocketHandler {
+    private final DataAccess dataAccess = new MySqlDataAccess();
+    private final Gson gson = new Gson();
 
-    private static final Map<Integer, Set<Session>> gameSessions = new ConcurrentHashMap<>();
-    private static final Map<Session, Integer> sessionToGame = new ConcurrentHashMap<>();
+    private static final Map<Session, Integer> gameSessions = new ConcurrentHashMap<>();
 
-    @Override
-    public void onWebSocketConnect(Session session) {
-        super.onWebSocketConnect(session);
-        System.out.println("WebSocket connected: " + session);
+    @OnWebSocketConnect
+    public void onConnect(Session session) {
+        System.out.println("WebSocket Connected: " + session);
     }
-
-    @Override
-    public void onWebSocketText(String message) {
-        Session session = getSession();
-        try {
-            WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
-            if (msg == null || msg.type == null) {
-                sendError(session, "Invalid message format.");
-                return;
-            }
-
-            switch (msg.type) {
-                case "join" -> processJoin(session, msg);
-                case "move" -> processMove(session, msg);
-                default -> sendError(session, "Unknown message type: " + msg.type);
-            }
-
-        } catch (Exception e) {
-            sendError(session, "Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private void processJoin(Session session, WebSocketMessage msg) throws Exception {
-        if (msg.gameId == null) {
-            sendError(session, "Missing gameId.");
-            return;
-        }
-
-        GameData gameData = db.getGame(msg.gameId);
-        if (gameData == null) {
-            sendError(session, "Game not found.");
-            return;
-        }
-
-        gameSessions.computeIfAbsent(msg.gameId, k -> ConcurrentHashMap.newKeySet()).add(session);
-        sessionToGame.put(session, msg.gameId);
-
-        sendGameState(session, gameData.game());
-    }
-
-    private void processMove(Session session, WebSocketMessage msg) throws Exception {
-        if (msg.gameId == null || msg.move == null) {
-            sendError(session, "Missing gameId or move.");
-            return;
-        }
-
-        GameData gameData = db.getGame(msg.gameId);
-        if (gameData == null) {
-            sendError(session, "Game not found.");
-            return;
-        }
-
-        ChessGame game = gameData.game();
-
-        try {
-            game.makeMove(msg.move);
-        } catch (Exception e) {
-            sendError(session, "Invalid move: " + e.getMessage());
-            return;
-        }
-
-        db.updateGame(new GameData(
-                gameData.gameID(),
-                gameData.whiteUsername(),
-                gameData.blackUsername(),
-                gameData.gameName(),
-                game
-        ));
-
-        broadcastToGame(msg.gameId, new OutgoingMessage("gameState", game));
-    }
-
-    private void sendGameState(Session session, ChessGame game) throws Exception {
-        String json = gson.toJson(new OutgoingMessage("gameState", game));
-        session.getRemote().sendString(json);
-    }
-
-    private void broadcastToGame(int gameId, OutgoingMessage message) throws Exception {
-        String json = gson.toJson(message);
+    /*private void broadcastNotificationToOthers(int gameId, Session excludeSession, String notification) throws Exception {
         Set<Session> sessions = gameSessions.getOrDefault(gameId, Set.of());
-
+        OutgoingMessage msg = new OutgoingMessage("notification", notification);
+        String json = gson.toJson(msg);
         for (Session s : sessions) {
-            if (s.isOpen()) {
+            if (!s.equals(excludeSession) && s.isOpen()) {
                 s.getRemote().sendString(json);
             }
         }
-    }
+    }/*
 
-    private void sendError(Session session, String error) {
+
+    @OnWebSocketMessage
+    public void onMessage(Session session, String message) {
         try {
-            if (session != null && session.isOpen()) {
-                session.getRemote().sendString(gson.toJson(new OutgoingMessage("error", error)));
+            WebSocketMessage msg = gson.fromJson(message, WebSocketMessage.class);
+
+            if ("join".equals(msg.type)) {
+                gameSessions.put(session, msg.gameId);
+                GameData game = dataAccess.getGame(msg.gameId);
+                session.getRemote().sendString(gson.toJson(game.game()));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    @Override
-    public void onWebSocketClose(int statusCode, String reason) {
-        Session session = getSession();
-        Integer gameId = sessionToGame.remove(session);
+            if ("move".equals(msg.type)) {
+                GameData gameData = dataAccess.getGame(msg.gameId);
+                ChessGame game = gameData.game();
+                game.makeMove(msg.move); // may want to validate legal moves
 
-        if (gameId != null) {
-            Set<Session> sessions = gameSessions.get(gameId);
-            if (sessions != null) {
-                sessions.remove(session);
-                if (sessions.isEmpty()) {
-                    gameSessions.remove(gameId);
+
+                GameData updated = new GameData(
+                        gameData.gameID(),
+                        gameData.whiteUsername(),
+                        gameData.blackUsername(),
+                        gameData.gameName(),
+                        game
+                );
+                dataAccess.updateGame(updated);
+
+
+                for (Map.Entry<Session, Integer> entry : gameSessions.entrySet()) {
+                    if (entry.getValue().equals(msg.gameId)) {
+                        entry.getKey().getRemote().sendString(gson.toJson(game));
+                    }
                 }
             }
-        }
 
-        System.out.println("WebSocket closed: " + reason);
-        super.onWebSocketClose(statusCode, reason);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
-    @Override
-    public void onWebSocketError(Throwable cause) {
-        cause.printStackTrace();
+    @OnWebSocketClose
+    public void onClose(Session session, int statusCode, String reason) {
+        gameSessions.remove(session);
+        System.out.println("WebSocket Closed: " + reason);
     }
 }
