@@ -4,12 +4,19 @@ import chess.ChessGame;
 import chess.ChessMove;
 
 public class WebSocketMessage {
-    private String serverMessageType;
-    private ChessGame game;
-    private String errorMessage;
-    private String message;
+    public ChessMove move;
+    public int gameId;
+    public String type;
+    public String serverMessageType;
+    public ChessGame game;
+    public String errorMessage;
+    public String message;
 
-    // Getters
+
+
+
+
+
     public String getServerMessageType() { return serverMessageType; }
     public ChessGame getGame() { return game; }
     public String getErrorMessage() { return errorMessage; }
