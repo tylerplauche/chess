@@ -44,12 +44,7 @@ public class WebSocketFacade implements WebSocket.Listener {
     /**
      * Close the WebSocket connection gracefully.
      */
-    /*public void close() {
-        if (webSocket != null) {
-            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Bye").thenRun(() ->
-                    System.out.println("WebSocket closed"));
-        }
-    }*/
+
 
     @Override
     public void onOpen(WebSocket webSocket) {

@@ -14,7 +14,6 @@ import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
-import service.LeaveGameService;
 import websocket.messages.Notification;
 import websocket.messages.ServerMessage;
 import websocket.commands.*;
@@ -30,12 +29,12 @@ public class ChessWebSocketHandler {
 
     private static final DataAccess DATAACCESS = new MySqlDataAccess();
     private static final Gson GSON = new Gson();
-    private final GameDAO GAMEDAO = new GameDAOSQL();
+    private final GameDAO gameDAO = new GameDAOSQL();
     private static final Map<Session, Integer> GAMESESSIONS = new ConcurrentHashMap<>();
     private static final Map<Integer, Session> WHITE_PLAYER_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<Integer, Session> BLACK_PLAYER_SESSIONS = new ConcurrentHashMap<>();
     private static final Map<Integer, Map<Session, String>> OBSERVERS_BY_GAME_ID = new ConcurrentHashMap<>();
-    private static final LeaveGameService leaveGameService = new LeaveGameService(DATAACCESS);
+    //private static final LeaveGameService leaveGameService = new LeaveGameService(DATAACCESS);
 
 
 
@@ -362,7 +361,7 @@ public class ChessWebSocketHandler {
                         gameData.gameName(),
                         gameData.game()
                 );
-                GAMEDAO.updateGame(updatedGame.gameID(), "WHITE", updatedGame.whiteUsername());
+                gameDAO.updateGame(updatedGame.gameID(), "WHITE", updatedGame.whiteUsername());
             } else if (Objects.equals(black, username)) {
                 GameData updatedGame = new GameData(
                         gameData.gameID(),
