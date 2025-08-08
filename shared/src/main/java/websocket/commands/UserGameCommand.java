@@ -45,9 +45,7 @@ public class UserGameCommand {
     public CommandType getCommandType() {
         return commandType;
     }
-    public String getPlayerColorAsString() {
-        return playerColor == null ? null : playerColor.name();
-    }
+
 
 
     public String getUsername() {
@@ -92,8 +90,12 @@ public class UserGameCommand {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserGameCommand)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UserGameCommand)) {
+            return false;
+        }
         UserGameCommand that = (UserGameCommand) o;
         return getCommandType() == that.getCommandType() &&
                 Objects.equals(getAuthToken(), that.getAuthToken()) &&

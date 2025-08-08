@@ -102,7 +102,9 @@ public class GameplayUI {
     }
 
     private ChessPosition parsePosition(String pos) {
-        if (pos.length() != 2) throw new IllegalArgumentException("Invalid position format");
+        if (pos.length() != 2) {
+            throw new IllegalArgumentException("Invalid position format");
+        }
         int col = pos.toLowerCase().charAt(0) - 'a' + 1;
         int row = Character.getNumericValue(pos.charAt(1));
         return new ChessPosition(row, col);

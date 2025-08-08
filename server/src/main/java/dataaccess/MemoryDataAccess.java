@@ -7,7 +7,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.*;
 
-public class MemoryDataAccess implements DataAccess { //Class 'MemoryDataAccess' must either be declared abstract or implement abstract method 'updateGameState(int, String)' in 'DataAcces
+public class MemoryDataAccess implements DataAccess {
     private final Map<String, UserData> users = new HashMap<>();
     private final Map<String, AuthData> auths = new HashMap<>();
     private final Map<Integer, GameData> games = new HashMap<>();

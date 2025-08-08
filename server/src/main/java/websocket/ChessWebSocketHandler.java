@@ -15,7 +15,6 @@ import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
 import service.LeaveGameService;
-import websocket.messages.ErrorMessage;
 import websocket.messages.Notification;
 import websocket.messages.ServerMessage;
 import websocket.commands.*;
@@ -29,14 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebSocket
 public class ChessWebSocketHandler {
 
-    private static final DataAccess dataAccess = new MySqlDataAccess();
-    private static final Gson gson = new Gson();
-    private final GameDAO gameDao = new GameDAOSQL();
-    private static final Map<Session, Integer> gameSessions = new ConcurrentHashMap<>();
-    private static final Map<Integer, Session> whitePlayerSessions = new ConcurrentHashMap<>();
-    private static final Map<Integer, Session> blackPlayerSessions = new ConcurrentHashMap<>();
-    private static final Map<Integer, Map<Session, String>> observersByGameID = new ConcurrentHashMap<>();
-    private static final LeaveGameService leaveGameService = new LeaveGameService(dataAccess);
+    private static final DataAccess DATAACCESS = new MySqlDataAccess();
+    private static final Gson GSON = new Gson();
+    private final GameDAO GAMEDAO = new GameDAOSQL();
+    private static final Map<Session, Integer> GAMESESSIONS = new ConcurrentHashMap<>();
+    private static final Map<Integer, Session> WHITE_PLAYER_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<Integer, Session> BLACK_PLAYER_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<Integer, Map<Session, String>> OBSERVERS_BY_GAME_ID = new ConcurrentHashMap<>();
+    private static final LeaveGameService leaveGameService = new LeaveGameService(DATAACCESS);
 
 
 
@@ -48,22 +47,22 @@ public class ChessWebSocketHandler {
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
         try {
-            UserGameCommand command = gson.fromJson(message, UserGameCommand.class);
+            UserGameCommand command = GSON.fromJson(message, UserGameCommand.class);
             int gameID = command.getGameID();
 
 
-            AuthData auth = dataAccess.getAuth(command.getAuthToken());
+            AuthData auth = DATAACCESS.getAuth(command.getAuthToken());
             if (auth == null) {
                 sendError(session, "Invalid or expired auth token");
                 return;
             }
 
 
-            gameSessions.put(session, gameID);
+            GAMESESSIONS.put(session, gameID);
 
             switch (command.getCommandType()) {
                 case CONNECT:
-                    GameData gameData = dataAccess.getGame(gameID);
+                    GameData gameData = DATAACCESS.getGame(gameID);
                     if (gameData == null) {
                         sendError(session, "Invalid game ID: " + gameID);
                         return;
@@ -117,8 +116,8 @@ public class ChessWebSocketHandler {
     private void handleJoin(Session session, UserGameCommand command) {
 
         try {
-            AuthData auth = dataAccess.getAuth(command.getAuthToken());
-            GameData gameData = dataAccess.getGame(command.getGameID());
+            AuthData auth = DATAACCESS.getAuth(command.getAuthToken());
+            GameData gameData = DATAACCESS.getGame(command.getGameID());
             if (gameData == null) {
                 sendError(session, "Game not found with ID " + command.getGameID());
                 return;
@@ -126,7 +125,7 @@ public class ChessWebSocketHandler {
 
             ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
             loadGame.setGame(gameData.game());
-            session.getRemote().sendString(gson.toJson(loadGame));
+            session.getRemote().sendString(GSON.toJson(loadGame));
 
 
             if (null==auth.username()){
@@ -134,12 +133,12 @@ public class ChessWebSocketHandler {
             }
             if  ("white".equals(auth.username())) {
 
-                whitePlayerSessions.put(command.getGameID(), session);
+                WHITE_PLAYER_SESSIONS.put(command.getGameID(), session);
             } else if ("black".equals(auth.username())) {
-                blackPlayerSessions.put(command.getGameID(), session);
+                BLACK_PLAYER_SESSIONS.put(command.getGameID(), session);
             } else if ("observer".equals(auth.username())) {
                 // Observer
-                observersByGameID.computeIfAbsent(command.getGameID(), k -> new ConcurrentHashMap<>())
+                OBSERVERS_BY_GAME_ID.computeIfAbsent(command.getGameID(), k -> new ConcurrentHashMap<>())
                         .put(session, command.getUsername());
             }
 
@@ -158,13 +157,13 @@ public class ChessWebSocketHandler {
         ChessMove move = command.getMove();
 
         try {
-            AuthData auth = dataAccess.getAuth(authToken);
+            AuthData auth = DATAACCESS.getAuth(authToken);
             if (auth == null) {
                 sendError(session, "Invalid auth token.");
                 return;
             }
 
-            GameData gameData = dataAccess.getGame(gameId);
+            GameData gameData = DATAACCESS.getGame(gameId);
             if (gameData == null) {
                 sendError(session, "Game not found.");
                 return;
@@ -216,7 +215,7 @@ public class ChessWebSocketHandler {
 
 
 
-            ((MySqlDataAccess) dataAccess).updateGameState(gameId, gson.toJson(game));
+            ((MySqlDataAccess) DATAACCESS).updateGameState(gameId, GSON.toJson(game));
 
 
             ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
@@ -242,14 +241,14 @@ public class ChessWebSocketHandler {
 
     private void handleResign(Session session, UserGameCommand command) {
         try {
-            GameData gameData = dataAccess.getGame(command.getGameID());
+            GameData gameData = DATAACCESS.getGame(command.getGameID());
             if (gameData == null) {
                 sendError(session, "Game not found.");
                 return;
             }
 
             // Retrieve user from auth token
-            AuthData auth = dataAccess.getAuth(command.getAuthToken());
+            AuthData auth = DATAACCESS.getAuth(command.getAuthToken());
             if (auth == null) {
                 sendError(session, "Invalid or expired auth token.");
                 return;
@@ -276,7 +275,7 @@ public class ChessWebSocketHandler {
             notification.setMessage(username + " has resigned");
             broadcastToGame(command.getGameID(), notification);
 
-            ((MySqlDataAccess) dataAccess).updateGameState(command.getGameID(), gson.toJson(game));
+            ((MySqlDataAccess) DATAACCESS).updateGameState(command.getGameID(), GSON.toJson(game));
 
         } catch (Exception e) {
             sendError(session, "Failed to process resignation: " + e.getMessage());
@@ -285,13 +284,13 @@ public class ChessWebSocketHandler {
 
     private void handleLeave(Session session, UserGameCommand command) {
         try {
-            GameData gameData = dataAccess.getGame(command.getGameID());
+            GameData gameData = DATAACCESS.getGame(command.getGameID());
             if (gameData == null) {
                 sendError(session, "Game not found.");
                 return;
             }
 
-            AuthData auth = dataAccess.getAuth(command.getAuthToken());
+            AuthData auth = DATAACCESS.getAuth(command.getAuthToken());
             if (auth == null) {
                 sendError(session, "Invalid or expired auth token.");
                 return;
@@ -303,8 +302,8 @@ public class ChessWebSocketHandler {
             boolean isWhite = username.equals(gameData.whiteUsername());
             boolean isBlack = username.equals(gameData.blackUsername());
 
-            Session whiteSession = whitePlayerSessions.get(gameId);
-            Session blackSession = blackPlayerSessions.get(gameId);
+            Session whiteSession = WHITE_PLAYER_SESSIONS.get(gameId);
+            Session blackSession = BLACK_PLAYER_SESSIONS.get(gameId);
 
             String leaveMessage = username + " has left the game.";
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
@@ -312,37 +311,41 @@ public class ChessWebSocketHandler {
 
             if (isWhite) {
                 // Remove from white player sessions map
-                whitePlayerSessions.remove(gameId);
+                WHITE_PLAYER_SESSIONS.remove(gameId);
 
                 // Remove from gameSessions map as well
-                gameSessions.remove(session);
+                GAMESESSIONS.remove(session);
 
                 // Broadcast to others that white left
                 broadcastToOthers(gameId, session, notification);
 
             } else if (isBlack) {
-                blackPlayerSessions.remove(gameId);
-                gameSessions.remove(session);
+                BLACK_PLAYER_SESSIONS.remove(gameId);
+                GAMESESSIONS.remove(session);
                 broadcastToOthers(gameId, session, notification);
             } else {
                 // Assume observer
-                Map<Session, String> observers = observersByGameID.get(gameId);
+                Map<Session, String> observers = OBSERVERS_BY_GAME_ID.get(gameId);
                 if (observers != null) {
                     observers.remove(session);
                 }
 
                 // Remove observer session from gameSessions
-                gameSessions.remove(session);
+                GAMESESSIONS.remove(session);
 
                 // Notify remaining player only if one is left
                 int activePlayers = 0;
-                if (whiteSession != null && whiteSession.isOpen()) activePlayers++;
-                if (blackSession != null && blackSession.isOpen()) activePlayers++;
+                if (whiteSession != null && whiteSession.isOpen()) {
+                    activePlayers++;
+                }
+                if (blackSession != null && blackSession.isOpen()) {
+                    activePlayers++;
+                }
 
                 if (activePlayers == 1) {
                     Session remainingPlayer = (whiteSession != null && whiteSession.isOpen()) ? whiteSession : blackSession;
                     if (remainingPlayer != null && remainingPlayer.isOpen()) {
-                        remainingPlayer.getRemote().sendString(gson.toJson(notification));
+                        remainingPlayer.getRemote().sendString(GSON.toJson(notification));
                     }
                 }
             }
@@ -359,7 +362,7 @@ public class ChessWebSocketHandler {
                         gameData.gameName(),
                         gameData.game()
                 );
-                gameDao.updateGame(updatedGame.gameID(), "WHITE", updatedGame.whiteUsername());
+                GAMEDAO.updateGame(updatedGame.gameID(), "WHITE", updatedGame.whiteUsername());
             } else if (Objects.equals(black, username)) {
                 GameData updatedGame = new GameData(
                         gameData.gameID(),
@@ -368,7 +371,7 @@ public class ChessWebSocketHandler {
                         gameData.gameName(),
                         gameData.game()
                 );
-                dataAccess.updateGame(updatedGame);
+                DATAACCESS.updateGame(updatedGame);
             }
 
         } catch (Exception e) {
@@ -382,15 +385,15 @@ public class ChessWebSocketHandler {
         try {
             ServerMessage error = new ServerMessage(ServerMessage.ServerMessageType.ERROR);
             error.setErrorMessage(errorMsg);
-            session.getRemote().sendString(gson.toJson(error));
+            session.getRemote().sendString(GSON.toJson(error));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void broadcastToGame(int gameID, ServerMessage message) {
-        String json = gson.toJson(message);
-        for (Map.Entry<Session, Integer> entry : gameSessions.entrySet()) {
+        String json = GSON.toJson(message);
+        for (Map.Entry<Session, Integer> entry : GAMESESSIONS.entrySet()) {
             if (entry.getValue() == gameID && entry.getKey().isOpen()) {
                 try {
                     entry.getKey().getRemote().sendString(json);
@@ -402,8 +405,8 @@ public class ChessWebSocketHandler {
     }
 
     private void broadcastToOthers(int gameID, Session excludeSession, ServerMessage message) {
-        String json = gson.toJson(message);
-        for (Map.Entry<Session, Integer> entry : gameSessions.entrySet()) {
+        String json = GSON.toJson(message);
+        for (Map.Entry<Session, Integer> entry : GAMESESSIONS.entrySet()) {
             if (entry.getValue() == gameID && entry.getKey().isOpen() && !entry.getKey().equals(excludeSession)) {
                 try {
                     entry.getKey().getRemote().sendString(json);
@@ -416,16 +419,16 @@ public class ChessWebSocketHandler {
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
-        Integer gameID = gameSessions.remove(session);
+        Integer gameID = GAMESESSIONS.remove(session);
         if (gameID != null) {
-            whitePlayerSessions.remove(gameID, session);
-            blackPlayerSessions.remove(gameID, session);
+            WHITE_PLAYER_SESSIONS.remove(gameID, session);
+            BLACK_PLAYER_SESSIONS.remove(gameID, session);
 
-            Map<Session, String> observers = observersByGameID.get(gameID);
+            Map<Session, String> observers = OBSERVERS_BY_GAME_ID.get(gameID);
             if (observers != null) {
                 observers.remove(session);
                 if (observers.isEmpty()) {
-                    observersByGameID.remove(gameID);
+                    OBSERVERS_BY_GAME_ID.remove(gameID);
                 }
             }
         }
