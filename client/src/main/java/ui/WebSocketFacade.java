@@ -49,7 +49,7 @@ public class WebSocketFacade implements WebSocket.Listener {
             webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Bye").thenRun(() ->
                     System.out.println("WebSocket closed"));
         }
-    }/*
+    }*/
 
     @Override
     public void onOpen(WebSocket webSocket) {
