@@ -1,6 +1,8 @@
 package websocket;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
@@ -99,24 +101,115 @@ public class ChessWebSocketHandler {
     }
 
     private void handleMove(Session session, UserGameCommand command) {
+        String authToken = command.getAuthToken();
+        Integer gameId = command.getGameID();
+        ChessMove move = command.getMove();
+
         try {
-            ((MySqlDataAccess) dataAccess).updateGameState(command.getGameID(), gson.toJson(command.getGame()));
+            AuthData auth = dataAccess.getAuth(authToken);
+            if (auth == null) {
+                sendError(session, "Invalid auth token.");
+                return;
+            }
 
+            GameData gameData = dataAccess.getGame(gameId);
+            if (gameData == null) {
+                sendError(session, "Game not found.");
+                return;
+            }
+
+            ChessGame game = gameData.game();
+
+
+            if (game.isGameOver()) {
+                sendError(session, "Game is already over; no moves allowed.");
+                return;
+            }
+            System.out.println("Game over status: " + game.isGameOver());
+
+
+            // Determine player color based on username
+            ChessGame.TeamColor playerColor;
+            if (gameData.whiteUsername().equals(auth.username())) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (gameData.blackUsername().equals(auth.username())) {
+                playerColor = ChessGame.TeamColor.BLACK;
+            } else {
+                sendError(session, "You are not a player in this game.");
+                return;
+            }
+
+            // Check if it's the player's turn
+            if (game.getTeamTurn() != playerColor) {
+                sendError(session, "It's not your turn.");
+                return;
+            }
+
+            // Check the piece at the start position exists and belongs to the player
+            var piece = game.getBoard().getPiece(move.getStartPosition());
+            if (piece == null) {
+                sendError(session, "No piece at the source position.");
+                return;
+            }
+            if (piece.getTeamColor() != playerColor) {
+                sendError(session, "You cannot move the opponent's piece.");
+                return;
+            }
+
+            try {
+                game.makeMove(move);
+            } catch (InvalidMoveException ime) {
+                sendError(session, "Invalid move: " + ime.getMessage());
+                return;
+            }
+
+
+            // Persist updated game state
+            ((MySqlDataAccess) dataAccess).updateGameState(gameId, gson.toJson(game));
+
+            // Send updated game state to all players
             ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
-            loadGame.setGame(command.getGame());
+            loadGame.setGame(game);
+            broadcastToGame(gameId, loadGame);
 
-            broadcastToGame(command.getGameID(), loadGame);
+            // Broadcast notification about the move to other players (exclude mover)
+            String mover = auth.username();
+            String moveText = mover + " moved from " + move.getStartPosition() + " to " + move.getEndPosition();
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(moveText);
+            broadcastToOthers(gameId, session, notification);
+
         } catch (DataAccessException e) {
-            sendError(session, "Failed to update game: " + e.getMessage());
+            sendError(session, "Internal error: " + e.getMessage());
+        } catch (Exception e) {
+            sendError(session, "Move failed: " + e.getMessage());
+        }
+
+    }
+
+
+
+    private void handleResign(Session session, UserGameCommand command) {
+        try {
+            GameData gameData = dataAccess.getGame(command.getGameID());
+            if (gameData == null) {
+                sendError(session, "Game not found.");
+                return;
+            }
+            ChessGame game = gameData.game();
+            game.setGameOver(true);  // Mark game as over on resignation
+
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(command.getUsername() + " has resigned");
+            broadcastToGame(command.getGameID(), notification);
+
+            ((MySqlDataAccess) dataAccess).updateGameState(command.getGameID(), gson.toJson(game));
+
+        } catch (Exception e) {
+            sendError(session, "Failed to process resignation: " + e.getMessage());
         }
     }
 
-    private void handleResign(Session session, UserGameCommand command) {
-        ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
-        notification.setPayload(command.getUsername() + " has resigned");
-
-        broadcastToGame(command.getGameID(), notification);
-    }
 
     private void sendError(Session session, String errorMsg) {
         try {

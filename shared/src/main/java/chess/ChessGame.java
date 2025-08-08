@@ -27,6 +27,7 @@ public class ChessGame {
 
     private ChessBoard board;
     private TeamColor currentTurn = TeamColor.WHITE;
+    private boolean gameOver = false;
     public ChessGame() {
         board = new ChessBoard();
         board.resetBoard();
@@ -57,6 +58,13 @@ public class ChessGame {
         WHITE,
         BLACK
     }
+    public boolean isGameOver() {
+        return isInCheckmate(currentTurn) || isInStalemate(currentTurn);
+    }
+    public void setGameOver(boolean over) {
+        gameOver = over;
+    }
+
 
     /**
      * Gets a valid moves for a piece at the given location
