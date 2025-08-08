@@ -108,7 +108,7 @@ public class GameDAOSQL implements GameDAO {
     }
 
     public void updateGame(int gameId, String playerColor, String username) throws DataAccessException {
-        if (!userExists(username)) {
+        if (username != null && !userExists(username)) {
             throw new DataAccessException("Username does not exist: " + username);
         }
 

@@ -38,12 +38,14 @@ public class JoinGameService {
 
         if ("white".equalsIgnoreCase(request.playerColor())) {
             if (game.whiteUsername() != null && !game.whiteUsername().equals(username)) {
+                System.out.println(game.whiteUsername());
                 throw new DataAccessException("already taken");
             }
             // Either empty or already belongs to this user, so update with this user
             updatedGame = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
         } else if ("black".equalsIgnoreCase(request.playerColor())) {
             if (game.blackUsername() != null && !game.blackUsername().equals(username)) {
+                System.out.println(game.blackUsername());
                 throw new DataAccessException("already taken");
             }
             updatedGame = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());

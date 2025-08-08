@@ -2,6 +2,7 @@ package ui;
 
 public class ChessClient {
     public static void main(String[] args) {
+
         String serverUrl = (args.length > 0) ? args[0] : null;
 
         if (serverUrl == null) {

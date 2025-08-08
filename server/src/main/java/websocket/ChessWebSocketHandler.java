@@ -6,11 +6,15 @@ import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
+import dataaccess.GameDAO;
+import dataaccess.sql.AuthTokenDAOSQL;
+import dataaccess.sql.GameDAOSQL;
 import dataaccess.sql.MySqlDataAccess;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
+import service.LeaveGameService;
 import websocket.messages.ErrorMessage;
 import websocket.messages.Notification;
 import websocket.messages.ServerMessage;
@@ -27,10 +31,13 @@ public class ChessWebSocketHandler {
 
     private static final DataAccess dataAccess = new MySqlDataAccess();
     private static final Gson gson = new Gson();
+    private final GameDAO gameDao = new GameDAOSQL();
     private static final Map<Session, Integer> gameSessions = new ConcurrentHashMap<>();
     private static final Map<Integer, Session> whitePlayerSessions = new ConcurrentHashMap<>();
     private static final Map<Integer, Session> blackPlayerSessions = new ConcurrentHashMap<>();
     private static final Map<Integer, Map<Session, String>> observersByGameID = new ConcurrentHashMap<>();
+    private static final LeaveGameService leaveGameService = new LeaveGameService(dataAccess);
+
 
 
     @OnWebSocketConnect
@@ -62,11 +69,26 @@ public class ChessWebSocketHandler {
                         return;
                     }
 
-                    String joiner = command.getUsername();
-                    String joinMessage = joiner + " has joined as " + command.getPlayerColor();
+                    AuthTokenDAOSQL authToken = new AuthTokenDAOSQL();
+                    AuthData authData = authToken.getToken(command.getAuthToken());
+                    String joinMessage = authData.username() + " has joined as ";
+
+
+
+                    if (authData.username().equals(gameData.whiteUsername())){
+                        joinMessage += "white";
+                    }
+                    else if (authData.username().equals(gameData.blackUsername())){
+                        joinMessage += "black";
+                    }
+                    else{
+                        joinMessage += "observer";
+                    }
+
 
                     Notification notification = new Notification(joinMessage);
                     broadcastToOthers(gameID, session, notification);
+
 
                     handleJoin(session, command);
                     break;
@@ -120,6 +142,7 @@ public class ChessWebSocketHandler {
                 observersByGameID.computeIfAbsent(command.getGameID(), k -> new ConcurrentHashMap<>())
                         .put(session, command.getUsername());
             }
+
 
 
 
@@ -274,9 +297,6 @@ public class ChessWebSocketHandler {
                 return;
             }
 
-            //String username = auth.username();
-            String color = auth.username();
-            
             String username = auth.username();
             int gameId = command.getGameID();
 
@@ -290,12 +310,19 @@ public class ChessWebSocketHandler {
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
             notification.setMessage(leaveMessage);
 
-// Remove session from appropriate map
             if (isWhite) {
+                // Remove from white player sessions map
                 whitePlayerSessions.remove(gameId);
+
+                // Remove from gameSessions map as well
+                gameSessions.remove(session);
+
+                // Broadcast to others that white left
                 broadcastToOthers(gameId, session, notification);
+
             } else if (isBlack) {
                 blackPlayerSessions.remove(gameId);
+                gameSessions.remove(session);
                 broadcastToOthers(gameId, session, notification);
             } else {
                 // Assume observer
@@ -303,6 +330,9 @@ public class ChessWebSocketHandler {
                 if (observers != null) {
                     observers.remove(session);
                 }
+
+                // Remove observer session from gameSessions
+                gameSessions.remove(session);
 
                 // Notify remaining player only if one is left
                 int activePlayers = 0;
@@ -316,6 +346,8 @@ public class ChessWebSocketHandler {
                     }
                 }
             }
+
+            // Update game data to remove leaving player from DB/game state
             String white = gameData.whiteUsername();
             String black = gameData.blackUsername();
 
@@ -327,7 +359,7 @@ public class ChessWebSocketHandler {
                         gameData.gameName(),
                         gameData.game()
                 );
-                dataAccess.updateGame(updatedGame);
+                gameDao.updateGame(updatedGame.gameID(), "WHITE", updatedGame.whiteUsername());
             } else if (Objects.equals(black, username)) {
                 GameData updatedGame = new GameData(
                         gameData.gameID(),
@@ -339,29 +371,11 @@ public class ChessWebSocketHandler {
                 dataAccess.updateGame(updatedGame);
             }
 
-
-
-
         } catch (Exception e) {
+            e.printStackTrace();
             sendError(session, "Failed to process leave: " + e.getMessage());
         }
     }
-
-
-
-
-
-    private void broadcastToObservers(int gameID, Session excludeSession, ServerMessage message) throws IOException {
-        Map<Session, String> observers = observersByGameID.getOrDefault(gameID, Map.of());
-        String json = gson.toJson(message);
-        for (Session observer : observers.keySet()) {
-            if (!observer.equals(excludeSession) && observer.isOpen()) {
-                observer.getRemote().sendString(json);
-            }
-        }
-    }
-
-
 
 
     private void sendError(Session session, String errorMsg) {
