@@ -11,11 +11,14 @@ public class PostLoginUI {
     private final ServerFacade server;
     private final AuthData auth;
     private final Scanner scanner = new Scanner(System.in);
+    private final String websocketUrl;
     private GameData[] listedGames;
 
     public PostLoginUI(ServerFacade server, AuthData auth) {
         this.server = server;
         this.auth = auth;
+        String httpUrl = server.getBaseUrl();  // e.g., "http://localhost:8080"
+        this.websocketUrl = httpUrl.replaceFirst("^http", "ws") + "/ws";
     }
 
     public void run() {
@@ -111,7 +114,8 @@ public class PostLoginUI {
         WebSocketFacade ws = new WebSocketFacade();
 
 
-        GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
+        GameplayUI gameplay = new GameplayUI(websocketUrl, selectedGame.gameID(), auth.username(), color,
+                auth.authToken());
 
 
         try {
@@ -143,11 +147,12 @@ public class PostLoginUI {
 
         WebSocketFacade ws = new WebSocketFacade();
 
-        GameplayUI gameplay = new GameplayUI(ws, selectedGame.gameID(), auth.username(), color);
+        GameplayUI gameplay = new GameplayUI(websocketUrl, selectedGame.gameID(), auth.username(), color,
+                auth.authToken());
 
         try {
             //ws.connect("ws://localhost:8080/connect", gameplay::handleMessage);
-            ws.sendJoin(selectedGame.gameID(), color);
+            //ws.sendJoin(selectedGame.gameID(), color);
             gameplay.run();
         } catch (Exception e) {
             System.out.println("WebSocket connection failed: " + e.getMessage());

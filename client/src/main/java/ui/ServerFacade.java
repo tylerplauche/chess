@@ -22,6 +22,9 @@ public class ServerFacade {
     public ServerFacade(String serverUrl) {
         this.serverUrl = serverUrl;
     }
+    public String getBaseUrl() {
+        return serverUrl;
+    }
 
     public AuthData register(String username, String password, String email) throws Exception {
         RegisterRequest req = new RegisterRequest(username, password, email);

@@ -20,7 +20,7 @@ public class Server {
         Spark.port(desiredPort);
         Spark.staticFiles.location("web");
 
-        webSocket("/connect", ChessWebSocketHandler.class);
+        webSocket("/ws", ChessWebSocketHandler.class);
 
 
 

@@ -1,64 +1,82 @@
 package ui;
 
-import chess.ChessMove;
 import com.google.gson.Gson;
-import model.OutgoingMessage;
-import model.WebSocketMessage;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
+import websocket.commands.UserGameCommand;
+import websocket.messages.ServerMessage;
 
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.WebSocket;
+import java.net.http.WebSocket.Listener;
+
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-public class WebSocketFacade {
-    private final WebSocketClient client = new WebSocketClient();
-    private ChessClientSocket socket;
+public class WebSocketFacade implements WebSocket.Listener {
+    private WebSocket webSocket;
     private final Gson gson = new Gson();
-    private Consumer<WebSocketMessage> onMessageHandler;
+    private Consumer<ServerMessage> messageHandler;
 
-    public void connect(String uri, Consumer<WebSocketMessage> onMessage) throws Exception {
-        this.onMessageHandler = onMessage;  // Save the UI's message handler
-        client.start();
-        socket = new ChessClientSocket(onMessageHandler);  // Pass handler directly
-        client.connect(socket, new URI(uri)).get();
-        System.out.println("Connected to server at " + uri);
+    /**
+     * Connect to the WebSocket server at the given URL, with a message handler.
+     */
+    public void connect(String url, Consumer<ServerMessage> messageHandler) {
+        this.messageHandler = messageHandler;
+
+        HttpClient.newHttpClient()
+                .newWebSocketBuilder()
+                .buildAsync(URI.create(url), this)
+                .thenAccept(ws -> this.webSocket = ws)
+                .join();
     }
 
-    private void send(OutgoingMessage message) throws Exception {
-        if (socket == null || !socket.isConnected()) {
-            throw new IllegalStateException("WebSocket not connected");
+    /**
+     * Send a UserGameCommand as JSON text.
+     */
+    public void send(UserGameCommand command) {
+        if (webSocket == null) {
+            throw new IllegalStateException("WebSocket is not connected");
         }
-        String json = gson.toJson(message);
-        socket.send(json);
+        String json = gson.toJson(command);
+        webSocket.sendText(json, true);
     }
 
-    public void close() throws Exception {
-        if (client != null) {
-            client.stop();
-            System.out.println("WebSocket closed");
+    /**
+     * Close the WebSocket connection gracefully.
+     */
+    public void close() {
+        if (webSocket != null) {
+            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Bye").thenRun(() ->
+                    System.out.println("WebSocket closed"));
         }
     }
 
-    public void sendJoin(int gameId, String color) {
+    @Override
+    public void onOpen(WebSocket webSocket) {
+        System.out.println("WebSocket connection opened");
+        Listener.super.onOpen(webSocket);
+    }
+
+    @Override
+    public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
         try {
-            send(OutgoingMessage.join(gameId, color));
+            // Parse incoming JSON string into ServerMessage object
+            ServerMessage message = gson.fromJson(data.toString(), ServerMessage.class);
+            if (messageHandler != null) {
+                messageHandler.accept(message);
+            } else {
+                System.out.println("No message handler set for WebSocketFacade");
+            }
         } catch (Exception e) {
-            System.out.println("Failed to send join: " + e.getMessage());
+            System.out.println("Failed to parse incoming message: " + data);
+            e.printStackTrace();
         }
+        return Listener.super.onText(webSocket, data, last);
     }
 
-    public void sendMove(int gameId, ChessMove move) {
-        try {
-            send(OutgoingMessage.move(gameId, move));
-        } catch (Exception e) {
-            System.out.println("Failed to send move: " + e.getMessage());
-        }
-    }
-
-    public void sendResign(int gameId) {
-        try {
-            send(OutgoingMessage.resign(gameId));
-        } catch (Exception e) {
-            System.out.println("Failed to send resign: " + e.getMessage());
-        }
+    @Override
+    public void onError(WebSocket webSocket, Throwable error) {
+        System.out.println("WebSocket error: " + error.getMessage());
+        error.printStackTrace();
     }
 }

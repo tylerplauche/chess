@@ -131,6 +131,24 @@ public class GameDAOSQL implements GameDAO {
             throw new DataAccessException("Update game failed: " + ex.getMessage(), ex);
         }
     }
+    public void updateGameState(int gameId, String gameStateJson) throws DataAccessException {
+        String sql = "UPDATE game SET game_state = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, gameStateJson);
+            stmt.setInt(2, gameId);
+
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
+                throw new DataAccessException("No game updated for id: " + gameId);
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Update game state failed: " + ex.getMessage(), ex);
+        }
+    }
+
 
     public void clear() throws DataAccessException {
         String sql = "DELETE FROM game";

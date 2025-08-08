@@ -12,6 +12,8 @@ public interface DataAccess {
 
     void insertUser(UserData user) throws DataAccessException;
     UserData getUser(String username) throws DataAccessException;
+    //GameData getGame(int gameID) throws DataAccessException;
+    void updateGameState(int gameID, String gameStateJson) throws DataAccessException;
 
     void insertAuth(AuthData auth) throws DataAccessException;
     AuthData getAuth(String authToken) throws DataAccessException;

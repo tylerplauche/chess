@@ -28,6 +28,13 @@ public class MySqlDataAccess implements DataAccess {
     public UserData getUser(String username) throws DataAccessException {
         return userDao.getUser(username);
     }
+    @Override
+    public void updateGameState(int gameId, String gameStateJson) throws DataAccessException {
+        gameDao.updateGameState(gameId, gameStateJson);
+    }
+
+
+
 
     @Override
     public void insertAuth(AuthData auth) throws DataAccessException {
