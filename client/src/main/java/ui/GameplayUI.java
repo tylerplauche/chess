@@ -66,7 +66,8 @@ public class GameplayUI {
             switch (input) {
                 case "1" -> makeMove();
                 case "2" -> {
-                    Resign resignCommand = new Resign(authToken, username, gameId);
+                    Resign resignCommand = new Resign(username, authToken, gameId);
+
                     ws.send(resignCommand);
                     System.out.println("You resigned.");
                     return;
@@ -93,7 +94,7 @@ public class GameplayUI {
             ChessPosition end = parsePosition(to);
 
             ChessMove move = new ChessMove(start, end, null);
-            MakeMove moveCommand = new MakeMove(username, gameId, move);//Expected 4 arguments but found 3
+            MakeMove moveCommand = new MakeMove(username, gameId, move);
             ws.send(moveCommand);
         } catch (Exception e) {
             System.out.println("⚠ Invalid move format. Use notation like 'e2' and 'e4'.");

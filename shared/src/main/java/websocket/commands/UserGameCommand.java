@@ -45,6 +45,10 @@ public class UserGameCommand {
     public CommandType getCommandType() {
         return commandType;
     }
+    public String getPlayerColorAsString() {
+        return playerColor == null ? null : playerColor.name();
+    }
+
 
     public String getUsername() {
         return username;

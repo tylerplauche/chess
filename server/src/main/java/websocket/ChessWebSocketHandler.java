@@ -18,7 +18,9 @@ import websocket.commands.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 @WebSocket
 public class ChessWebSocketHandler {
@@ -26,6 +28,10 @@ public class ChessWebSocketHandler {
     private static final DataAccess dataAccess = new MySqlDataAccess();
     private static final Gson gson = new Gson();
     private static final Map<Session, Integer> gameSessions = new ConcurrentHashMap<>();
+    private static final Map<Integer, Session> whitePlayerSessions = new ConcurrentHashMap<>();
+    private static final Map<Integer, Session> blackPlayerSessions = new ConcurrentHashMap<>();
+    private static final Map<Integer, Map<Session, String>> observersByGameID = new ConcurrentHashMap<>();
+
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
@@ -72,6 +78,9 @@ public class ChessWebSocketHandler {
                 case RESIGN:
                     handleResign(session, command);
                     break;
+                case LEAVE:
+                    handleLeave(session, command);
+                    break;
 
                 default:
                     sendError(session, "Unknown command type: " + command.getCommandType());
@@ -84,7 +93,9 @@ public class ChessWebSocketHandler {
     }
 
     private void handleJoin(Session session, UserGameCommand command) {
+
         try {
+            AuthData auth = dataAccess.getAuth(command.getAuthToken());
             GameData gameData = dataAccess.getGame(command.getGameID());
             if (gameData == null) {
                 sendError(session, "Game not found with ID " + command.getGameID());
@@ -92,13 +103,31 @@ public class ChessWebSocketHandler {
             }
 
             ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
-            loadGame.setGame(gameData.game()); // Set actual ChessGame object
-
+            loadGame.setGame(gameData.game());
             session.getRemote().sendString(gson.toJson(loadGame));
+
+
+            if (null==auth.username()){
+                return;
+            }
+            if  ("white".equals(auth.username())) {
+
+                whitePlayerSessions.put(command.getGameID(), session);
+            } else if ("black".equals(auth.username())) {
+                blackPlayerSessions.put(command.getGameID(), session);
+            } else if ("observer".equals(auth.username())) {
+                // Observer
+                observersByGameID.computeIfAbsent(command.getGameID(), k -> new ConcurrentHashMap<>())
+                        .put(session, command.getUsername());
+            }
+
+
+
         } catch (Exception e) {
-            sendError(session, "Failed to load game: " + e.getMessage());
+            //sendError(session, "Failed to load game: " + e.getMessage());
         }
     }
+
 
     private void handleMove(Session session, UserGameCommand command) {
         String authToken = command.getAuthToken();
@@ -128,7 +157,7 @@ public class ChessWebSocketHandler {
             System.out.println("Game over status: " + game.isGameOver());
 
 
-            // Determine player color based on username
+
             ChessGame.TeamColor playerColor;
             if (gameData.whiteUsername().equals(auth.username())) {
                 playerColor = ChessGame.TeamColor.WHITE;
@@ -139,7 +168,6 @@ public class ChessWebSocketHandler {
                 return;
             }
 
-            // Check if it's the player's turn
             if (game.getTeamTurn() != playerColor) {
                 sendError(session, "It's not your turn.");
                 return;
@@ -164,15 +192,15 @@ public class ChessWebSocketHandler {
             }
 
 
-            // Persist updated game state
+
             ((MySqlDataAccess) dataAccess).updateGameState(gameId, gson.toJson(game));
 
-            // Send updated game state to all players
+
             ServerMessage loadGame = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME);
             loadGame.setGame(game);
             broadcastToGame(gameId, loadGame);
 
-            // Broadcast notification about the move to other players (exclude mover)
+
             String mover = auth.username();
             String moveText = mover + " moved from " + move.getStartPosition() + " to " + move.getEndPosition();
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
@@ -196,11 +224,33 @@ public class ChessWebSocketHandler {
                 sendError(session, "Game not found.");
                 return;
             }
+
+            // Retrieve user from auth token
+            AuthData auth = dataAccess.getAuth(command.getAuthToken());
+            if (auth == null) {
+                sendError(session, "Invalid or expired auth token.");
+                return;
+            }
+
+            String username = auth.username();
+
+            // Check if the user is a player (white or black)
+            if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+                sendError(session, "Only players can resign.");
+                return;
+            }
+
             ChessGame game = gameData.game();
+
+            if (game.isGameOver()) {
+                sendError(session, "Game is already over; no resign allowed.");
+                return;
+            }
+
             game.setGameOver(true);  // Mark game as over on resignation
 
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
-            notification.setMessage(command.getUsername() + " has resigned");
+            notification.setMessage(username + " has resigned");
             broadcastToGame(command.getGameID(), notification);
 
             ((MySqlDataAccess) dataAccess).updateGameState(command.getGameID(), gson.toJson(game));
@@ -209,6 +259,109 @@ public class ChessWebSocketHandler {
             sendError(session, "Failed to process resignation: " + e.getMessage());
         }
     }
+
+    private void handleLeave(Session session, UserGameCommand command) {
+        try {
+            GameData gameData = dataAccess.getGame(command.getGameID());
+            if (gameData == null) {
+                sendError(session, "Game not found.");
+                return;
+            }
+
+            AuthData auth = dataAccess.getAuth(command.getAuthToken());
+            if (auth == null) {
+                sendError(session, "Invalid or expired auth token.");
+                return;
+            }
+
+            //String username = auth.username();
+            String color = auth.username();
+            
+            String username = auth.username();
+            int gameId = command.getGameID();
+
+            boolean isWhite = username.equals(gameData.whiteUsername());
+            boolean isBlack = username.equals(gameData.blackUsername());
+
+            Session whiteSession = whitePlayerSessions.get(gameId);
+            Session blackSession = blackPlayerSessions.get(gameId);
+
+            String leaveMessage = username + " has left the game.";
+            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION);
+            notification.setMessage(leaveMessage);
+
+// Remove session from appropriate map
+            if (isWhite) {
+                whitePlayerSessions.remove(gameId);
+                broadcastToOthers(gameId, session, notification);
+            } else if (isBlack) {
+                blackPlayerSessions.remove(gameId);
+                broadcastToOthers(gameId, session, notification);
+            } else {
+                // Assume observer
+                Map<Session, String> observers = observersByGameID.get(gameId);
+                if (observers != null) {
+                    observers.remove(session);
+                }
+
+                // Notify remaining player only if one is left
+                int activePlayers = 0;
+                if (whiteSession != null && whiteSession.isOpen()) activePlayers++;
+                if (blackSession != null && blackSession.isOpen()) activePlayers++;
+
+                if (activePlayers == 1) {
+                    Session remainingPlayer = (whiteSession != null && whiteSession.isOpen()) ? whiteSession : blackSession;
+                    if (remainingPlayer != null && remainingPlayer.isOpen()) {
+                        remainingPlayer.getRemote().sendString(gson.toJson(notification));
+                    }
+                }
+            }
+            String white = gameData.whiteUsername();
+            String black = gameData.blackUsername();
+
+            if (Objects.equals(white, username)) {
+                GameData updatedGame = new GameData(
+                        gameData.gameID(),
+                        null, // whiteUsername cleared
+                        black,
+                        gameData.gameName(),
+                        gameData.game()
+                );
+                dataAccess.updateGame(updatedGame);
+            } else if (Objects.equals(black, username)) {
+                GameData updatedGame = new GameData(
+                        gameData.gameID(),
+                        white,
+                        null, // blackUsername cleared
+                        gameData.gameName(),
+                        gameData.game()
+                );
+                dataAccess.updateGame(updatedGame);
+            }
+
+
+
+
+        } catch (Exception e) {
+            sendError(session, "Failed to process leave: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+    private void broadcastToObservers(int gameID, Session excludeSession, ServerMessage message) throws IOException {
+        Map<Session, String> observers = observersByGameID.getOrDefault(gameID, Map.of());
+        String json = gson.toJson(message);
+        for (Session observer : observers.keySet()) {
+            if (!observer.equals(excludeSession) && observer.isOpen()) {
+                observer.getRemote().sendString(json);
+            }
+        }
+    }
+
+
 
 
     private void sendError(Session session, String errorMsg) {
@@ -249,7 +402,20 @@ public class ChessWebSocketHandler {
 
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
-        gameSessions.remove(session);
+        Integer gameID = gameSessions.remove(session);
+        if (gameID != null) {
+            whitePlayerSessions.remove(gameID, session);
+            blackPlayerSessions.remove(gameID, session);
+
+            Map<Session, String> observers = observersByGameID.get(gameID);
+            if (observers != null) {
+                observers.remove(session);
+                if (observers.isEmpty()) {
+                    observersByGameID.remove(gameID);
+                }
+            }
+        }
+
         System.out.println("WebSocket Closed (" + statusCode + "): " + reason);
     }
 

@@ -59,8 +59,9 @@ public class ChessGame {
         BLACK
     }
     public boolean isGameOver() {
-        return isInCheckmate(currentTurn) || isInStalemate(currentTurn);
+        return gameOver || isInCheckmate(currentTurn) || isInStalemate(currentTurn);
     }
+
     public void setGameOver(boolean over) {
         gameOver = over;
     }
@@ -240,8 +241,10 @@ public class ChessGame {
     }
 
 
+
     public ChessBoard getBoard() {
         return board;
 
     }
+
 }
